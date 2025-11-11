@@ -1,9 +1,17 @@
 package config
 
-import "github.com/joho/godotenv"
+import (
+	"lnk/extensions/logger"
+	"lnk/gateways/gocql"
+
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
+)
 
 type Config struct {
-	Port string `envconfig:"PORT" default:"8080"`
+	Port   string `envconfig:"PORT" default:"8080"`
+	Gocql  gocql.Config
+	Logger logger.Config
 }
 
 func LoadConfig() (*Config, error) {
@@ -12,5 +20,11 @@ func LoadConfig() (*Config, error) {
 		return nil, err
 	}
 	config := &Config{}
+	if err := envconfig.Process("", config); err != nil {
+		return nil, err
+	}
+	if err := envconfig.Process("", &config.Gocql); err != nil {
+		return nil, err
+	}
 	return config, nil
 }

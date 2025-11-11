@@ -1,13 +1,20 @@
 services:
   redis:
     image: redis:latest
+    container_name: lnk-redis
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - lnk_network
 
-networks:
-  lnk_network:
-    driver: bridge
+  cassandra:
+    image: cassandra:latest
+    container_name: lnk-cassandra
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=lnk-cluster
+      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_RACK=rack1
+      - CASSANDRA_AUTHENTICATOR=PasswordAuthenticator
+      - CASSANDRA_AUTHORIZER=CassandraAuthorizer
+      - CASSANDRA_USER=cassandra
+      - CASSANDRA_PASSWORD=cassandra
