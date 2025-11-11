@@ -1,6 +1,7 @@
 package config
 
 import (
+	"lnk/extensions/logger"
 	"lnk/gateways/gocql"
 
 	"github.com/joho/godotenv"
@@ -8,8 +9,9 @@ import (
 )
 
 type Config struct {
-	Port  string       `envconfig:"PORT" default:"8080"`
-	Gocql gocql.Config
+	Port   string `envconfig:"PORT" default:"8080"`
+	Gocql  gocql.Config
+	Logger logger.Config
 }
 
 func LoadConfig() (*Config, error) {

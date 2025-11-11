@@ -4,9 +4,7 @@ services:
     container_name: lnk-redis
     ports:
       - "6379:6379"
-    networks:
-      - lnk_network
-      
+
   cassandra:
     image: cassandra:latest
     container_name: lnk-cassandra
@@ -20,9 +18,3 @@ services:
       - CASSANDRA_AUTHORIZER=CassandraAuthorizer
       - CASSANDRA_USER=cassandra
       - CASSANDRA_PASSWORD=cassandra
-    networks:
-      - lnk_network
-      
-networks:
-  lnk_network:
-    driver: bridge
