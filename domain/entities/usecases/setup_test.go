@@ -1,7 +1,7 @@
 package usecases_test
 
 import (
-	"lnk/extensions/gcqltesting"
+	gocqltesting "lnk/extensions/gocqltesting"
 	"lnk/gateways/gocql/migrations"
 	"log"
 	"os"
@@ -9,10 +9,10 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	_, tearDown, err := gcqltesting.StartDockerContainer(gcqltesting.DockerContainerConfig{
+	_, tearDown, err := gocqltesting.StartDockerContainer(gocqltesting.DockerContainerConfig{
 		Version:       "latest",
 		ContainerName: "lnk-cassandra-test",
-		Migrations: &gcqltesting.Migrations{
+		Migrations: &gocqltesting.Migrations{
 			Folder: "migrations",
 			FS:     migrations.MigrationsFS,
 		},

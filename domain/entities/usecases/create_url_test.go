@@ -3,8 +3,7 @@ package usecases
 import (
 	"context"
 
-	"lnk/extensions/gcqltesting"
-	"lnk/gateways/gocql"
+	"lnk/extensions/gocqltesting"
 	"lnk/gateways/gocql/repositories"
 	"testing"
 
@@ -14,13 +13,12 @@ import (
 )
 
 func TestCreateURL(t *testing.T) {
-	rawSession, err := gcqltesting.NewDB(t, t.Name())
+	session, err := gocqltesting.NewDB(t, t.Name())
 	require.NoError(t, err)
 
 	ctx := context.Background()
 	logger := zap.NewNop()
 
-	session := &gocql.Session{Session: rawSession}
 	repository := repositories.NewRepository(ctx, logger, session)
 
 	params := NewUseCaseParams{

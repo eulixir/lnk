@@ -1,4 +1,4 @@
-package gcqltesting
+package gocqltesting
 
 import (
 	"errors"

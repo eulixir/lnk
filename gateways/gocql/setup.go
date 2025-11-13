@@ -19,7 +19,7 @@ type Session struct {
 	*gocql.Session
 }
 
-func SetupDatabase(ctx context.Context, config *Config, logger *zap.Logger) (*Session, error) {
+func SetupDatabase(ctx context.Context, config *Config, logger *zap.Logger) (*gocql.Session, error) {
 	cluster := gocql.NewCluster(config.Host)
 	cluster.Port = config.Port
 	cluster.Authenticator = gocql.PasswordAuthenticator{
@@ -57,7 +57,7 @@ func SetupDatabase(ctx context.Context, config *Config, logger *zap.Logger) (*Se
 
 	logger.Info("Database connection established successfully")
 
-	return &Session{Session: session}, nil
+	return session, nil
 }
 
 func createSessionWithRetry(cluster *gocql.ClusterConfig) (*gocql.Session, error) {

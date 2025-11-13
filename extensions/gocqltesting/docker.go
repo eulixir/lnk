@@ -1,4 +1,4 @@
-package gcqltesting
+package gocqltesting
 
 import (
 	"errors"
@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	_reusableContainerName     = "gcql-testing-container"
+	_reusableContainerName     = "gocql-testing-container"
 	_defaultGocqlDockerVersion = "latest"
 	_templateKeyspace          = "template_keyspace"
 )
