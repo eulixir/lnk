@@ -79,8 +79,13 @@ func (h *URLsHandler) CreateURL(c *gin.Context) {
 // @Failure      500        {object}  map[string]string
 // @Router       /{short_url} [get]
 func (h *URLsHandler) GetURL(c *gin.Context) {
-	shortURL := c.Param("short_url")
-	h.logger.Info("GetURL called", zap.String("short_url", shortURL))
+	shortCode := c.Param("short_url")
 
-	c.JSON(http.StatusPermanentRedirect, gin.H{"url": "https://example.com"})
+	longURL, err := h.useCase.GetLongURL(shortCode)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusPermanentRedirect, gin.H{"url": longURL})
 }

@@ -48,6 +48,11 @@ func main() {
 	}
 	defer redisClient.Close()
 
+	setInitialCounter, err := redis.SetInitialCounterValue(ctx, redisClient, &cfg.Redis, logger)
+	if err != nil && !setInitialCounter {
+		logger.Fatal("Failed to set initial counter", zap.Error(err))
+	}
+
 	repository := repositories.NewRepository(logger, session)
 	useCase := usecases.NewUseCase(usecases.NewUseCaseParams{
 		Ctx:        ctx,
