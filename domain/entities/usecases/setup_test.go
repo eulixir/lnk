@@ -1,4 +1,4 @@
-package usecases
+package usecases_test
 
 import (
 	"lnk/extensions/gcqltesting"
@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func SetupMain(m *testing.M) {
+func TestMain(m *testing.M) {
 	_, tearDown, err := gcqltesting.StartDockerContainer(gcqltesting.DockerContainerConfig{
 		Version:       "latest",
 		ContainerName: "lnk-cassandra-test",

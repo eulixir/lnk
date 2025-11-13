@@ -20,7 +20,6 @@ func TestCreateURL(t *testing.T) {
 	ctx := context.Background()
 	logger := zap.NewNop()
 
-	// Wrap the raw session in the gateway wrapper
 	session := &gocql.Session{Session: rawSession}
 	repository := repositories.NewRepository(ctx, logger, session)
 

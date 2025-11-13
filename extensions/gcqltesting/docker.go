@@ -19,7 +19,6 @@ import (
 
 const (
 	_reusableContainerName     = "gcql-testing-container"
-	_gcqlDefaultKeyspace       = "master"
 	_defaultGocqlDockerVersion = "latest"
 	_templateKeyspace          = "template_keyspace"
 )
@@ -124,10 +123,10 @@ func StartDockerContainer(cfg DockerContainerConfig) (_ *DockerizedMssql, teardo
 }
 
 func setupTemplateDatabase(conn *cassandra.Session, migrationsFs fs.FS) error {
-	dbName := _templateKeyspace
+	dbKeyspace := _templateKeyspace
 
 	var dbCount int
-	err := conn.Query("SELECT COUNT(*) FROM system_schema.keyspaces WHERE keyspace_name = ?", dbName).Scan(&dbCount)
+	err := conn.Query("SELECT COUNT(*) FROM system_schema.keyspaces WHERE keyspace_name = ?", dbKeyspace).Scan(&dbCount)
 	if err != nil {
 		return fmt.Errorf("error checking template keyspace: %w", err)
 	}
@@ -135,12 +134,12 @@ func setupTemplateDatabase(conn *cassandra.Session, migrationsFs fs.FS) error {
 	if dbCount > 0 {
 		return nil
 	}
-	err = createDB(dbName, conn)
+	err = createDB(dbKeyspace, conn)
 	if err != nil {
 		return fmt.Errorf("error creating template keyspace: %w", err)
 	}
 
-	err = runMigrations(getCassandraConnString(dbPort, dbName), migrationsFs)
+	err = runMigrations(getCassandraConnString(dbPort, dbKeyspace), migrationsFs)
 	if err != nil {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
@@ -148,21 +147,21 @@ func setupTemplateDatabase(conn *cassandra.Session, migrationsFs fs.FS) error {
 	return nil
 }
 
-func dropDB(dbName string, conn *cassandra.Session) error {
-	if dbName == _gcqlDefaultKeyspace {
+func dropDB(dbKeyspace string, conn *cassandra.Session) error {
+	if dbKeyspace == _templateKeyspace {
 		return nil
 	}
-	if err := conn.Query(fmt.Sprintf(`DROP KEYSPACE IF EXISTS [%s]`, dbName)).Exec(); err != nil {
-		return fmt.Errorf("failed dropping keyspace %s: %w", dbName, err)
+	if err := conn.Query(fmt.Sprintf(`DROP KEYSPACE IF EXISTS [%s]`, dbKeyspace)).Exec(); err != nil {
+		return fmt.Errorf("failed dropping keyspace %s: %w", dbKeyspace, err)
 	}
 	return nil
 }
 
-func createDB(dbName string, conn *cassandra.Session) error {
-	_ = dropDB(dbName, conn)
+func createDB(dbKeyspace string, conn *cassandra.Session) error {
+	_ = dropDB(dbKeyspace, conn)
 
-	if err := conn.Query(fmt.Sprintf(`CREATE KEYSPACE [%s]`, dbName)).Exec(); err != nil {
-		return fmt.Errorf("error creating keyspace %s: %w", dbName, err)
+	if err := conn.Query(fmt.Sprintf(`CREATE KEYSPACE [%s]`, dbKeyspace)).Exec(); err != nil {
+		return fmt.Errorf("error creating keyspace %s: %w", dbKeyspace, err)
 	}
 
 	return nil

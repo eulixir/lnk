@@ -19,7 +19,7 @@ func NewDB(t *testing.T, dbName string) (*cassandra.Session, error) {
 	session := concurrentSession
 
 	if session == nil {
-		return nil, errors.New("session is nil - ensure SetupContainer has been called")
+		return nil, errors.New("session is nil - ensure StartDockerContainer has been called")
 	}
 
 	if dbName == "" {
