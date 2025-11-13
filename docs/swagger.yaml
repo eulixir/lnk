@@ -1,0 +1,118 @@
+basePath: /
+definitions:
+  handlers.CreateURLRequest:
+    properties:
+      url:
+        example: https://example.com
+        type: string
+    required:
+    - url
+    type: object
+  handlers.CreateURLResponse:
+    properties:
+      original_url:
+        example: https://example.com
+        type: string
+      short_url:
+        example: abc123
+        type: string
+    type: object
+  handlers.ErrorResponse:
+    properties:
+      error:
+        example: error message
+        type: string
+    type: object
+info:
+  contact: {}
+  description: A URL shortener service API
+  termsOfService: http://swagger.io/terms/
+  title: LNK URL Shortener API
+  version: "1.0"
+paths:
+  /{short_url}:
+    get:
+      consumes:
+      - application/json
+      description: Get the original URL from a short URL
+      parameters:
+      - description: Short URL identifier
+        in: path
+        name: short_url
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "301":
+          description: Moved Permanently
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get original URL by short URL
+      tags:
+      - urls
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Check if the API is running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check endpoint
+      tags:
+      - health
+  /shorten:
+    post:
+      consumes:
+      - application/json
+      description: Create a short URL from a long URL
+      parameters:
+      - description: URL to shorten
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateURLRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.CreateURLResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Create a short URL
+      tags:
+      - urls
+schemes:
+- http
+- https
+swagger: "2.0"
