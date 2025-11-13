@@ -7,7 +7,6 @@ import (
 	"time"
 
 	_ "lnk/docs"
-	"lnk/extensions/config"
 	"lnk/gateways/http/handlers"
 
 	"go.uber.org/zap"
@@ -27,20 +26,20 @@ import (
 type Server struct {
 	router   *gin.Engine
 	logger   *zap.Logger
-	config   *config.Config
+	port     string
 	handlers *handlers.Handlers
 	srv      *http.Server
 }
 
-func NewServer(logger *zap.Logger, cfg *config.Config) *Server {
+func NewServer(logger *zap.Logger, port string) *Server {
 	router := gin.Default()
 
-	httpHandlers := handlers.NewHttpHandlers(router, logger)
+	httpHandlers := handlers.NewHttpHandlers(router, logger, port)
 
 	return &Server{
 		router:   router,
 		logger:   logger,
-		config:   cfg,
+		port:     port,
 		handlers: httpHandlers,
 	}
 }
@@ -48,7 +47,7 @@ func NewServer(logger *zap.Logger, cfg *config.Config) *Server {
 func (s *Server) Start() error {
 	s.handlers.SetupHandlers()
 
-	addr := fmt.Sprintf(":%s", s.config.Port)
+	addr := fmt.Sprintf(":%s", s.port)
 	s.logger.Info("Starting HTTP server", zap.String("address", addr))
 
 	s.srv = &http.Server{

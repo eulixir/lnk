@@ -14,13 +14,15 @@ import (
 type Handlers struct {
 	router      *gin.Engine
 	logger      *zap.Logger
+	env         string
 	URLsHandler *URLsHandler
 }
 
-func NewHttpHandlers(router *gin.Engine, logger *zap.Logger) *Handlers {
+func NewHttpHandlers(router *gin.Engine, logger *zap.Logger, env string) *Handlers {
 	h := &Handlers{
 		router:      router,
 		logger:      logger,
+		env:         env,
 		URLsHandler: NewURLsHandler(logger),
 	}
 
@@ -38,7 +40,9 @@ func (h *Handlers) setupMiddleware() {
 }
 
 func (h *Handlers) SetupHandlers() {
-	h.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	if h.env == "development" {
+		h.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 	h.router.GET("/health", h.healthCheck)
 	h.router.POST("/shorten", h.URLsHandler.CreateURL)
 	h.router.GET("/:short_url", h.URLsHandler.GetURL)

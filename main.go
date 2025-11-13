@@ -38,7 +38,7 @@ func main() {
 	}
 	defer session.Close()
 
-	server := httpServer.NewServer(logger, cfg)
+	server := httpServer.NewServer(logger, cfg.App.Port)
 	if err := server.Start(); err != nil {
 		logger.Fatal("Failed to start HTTP server", zap.Error(err))
 	}
