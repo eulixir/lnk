@@ -1,0 +1,50 @@
+version: "2"
+linters:
+  default: all
+  disable:
+    - depguard
+    - err113
+    - exhaustive
+    - exhaustruct
+    - godot
+    - godox
+    - gomoddirectives
+    - ireturn
+    - lll
+    - musttag
+    - nlreturn
+    - nonamedreturns
+    - tagalign
+    - tagliatelle
+    - varnamelen
+    - wsl
+    - wsl_v5
+    - embeddedstructfieldcheck
+    - noinlineerr
+    - revive
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - mock\.go$
+      - mock_[^/]*\.go$
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - mock\.go$
+      - mock_[^/]*\.go$
+      - third_party$
+      - builtin$
+      - examples$

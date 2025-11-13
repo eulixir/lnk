@@ -51,7 +51,7 @@ func NewDB(t *testing.T, dbName string) (*cassandra.Session, error) {
 
 	port := 9042
 	if dbPort != "" {
-		fmt.Sscanf(dbPort, "%d", &port)
+		_, _ = fmt.Sscanf(dbPort, "%d", &port)
 	}
 
 	cluster := cassandra.NewCluster("localhost")

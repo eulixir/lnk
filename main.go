@@ -46,7 +46,11 @@ func main() {
 	if err != nil {
 		logger.Fatal("Failed to setup Redis", zap.Error(err))
 	}
-	defer redisClient.Close()
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			logger.Error("Failed to close Redis client", zap.Error(err))
+		}
+	}()
 
 	setInitialCounter, err := redis.SetInitialCounterValue(ctx, redisClient, &cfg.Redis, logger)
 	if err != nil && !setInitialCounter {

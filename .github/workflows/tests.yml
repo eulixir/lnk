@@ -1,0 +1,76 @@
+name: Tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+env:
+  GO_VERSION: "1.24"
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    services:
+      docker:
+        image: docker:dind
+        options: >-
+          --privileged
+          --health-cmd "docker info"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+
+      - name: Cache Go build cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-go${{ env.GO_VERSION }}-build-${{ hashFiles('go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go${{ env.GO_VERSION }}-build-
+            ${{ runner.os }}-go-build-
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Wait for Docker to be ready
+        run: |
+          echo "Waiting for Docker daemon..."
+          until docker info > /dev/null 2>&1; do
+            echo "Docker daemon not ready yet..."
+            sleep 1
+          done
+          echo "Docker daemon is ready"
+
+      - name: Run tests
+        run: |
+          go test -timeout 120s -v -race -coverprofile=coverage.out ./...
+
+      - name: Generate coverage report
+        run: make coverage
+        continue-on-error: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          file: ./coverage.out
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false

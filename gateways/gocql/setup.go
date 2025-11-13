@@ -33,7 +33,9 @@ func SetupDatabase(config *Config, logger *zap.Logger) (*gocql.Session, error) {
 		"CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}",
 		config.Keyspace,
 	)
-	session.Query(createKeyspaceQuery).Exec()
+	if err := session.Query(createKeyspaceQuery).Exec(); err != nil {
+		logger.Warn("Failed to create keyspace (may already exist)", zap.Error(err))
+	}
 
 	cluster.Keyspace = config.Keyspace
 	sessionWithKeyspace, err := cluster.CreateSession()
@@ -90,7 +92,12 @@ func runMigrations(config *Config, logger *zap.Logger) error {
 	}
 
 	logger.Info("Running migrations")
-	defer m.Close()
+	defer func() {
+		_, err := m.Close()
+		if err != nil {
+			logger.Warn("Failed to close migration instance", zap.Error(err))
+		}
+	}()
 
 	if err := m.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {

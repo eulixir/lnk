@@ -119,7 +119,7 @@ func StartDockerContainer(cfg DockerContainerConfig) (teardownFn func(), err err
 				concurrentSession.Close()
 				concurrentSession = nil
 			}
-			dockerResource.Close()
+			_ = dockerResource.Close()
 			containerInitialized = false
 			templateReady = false
 		}
@@ -211,7 +211,7 @@ func pingCassandraFn(port string) func() error {
 	return func() error {
 		portInt := 9042
 		if port != "" {
-			fmt.Sscanf(port, "%d", &portInt)
+			_, _ = fmt.Sscanf(port, "%d", &portInt)
 		}
 
 		cluster := cassandra.NewCluster("localhost")
@@ -246,7 +246,7 @@ func getCassandraConnString(port, keyspace string) string {
 func newDB(_ string) (*cassandra.Session, error) {
 	port := 9042
 	if dbPort != "" {
-		fmt.Sscanf(dbPort, "%d", &port)
+		_, _ = fmt.Sscanf(dbPort, "%d", &port)
 	}
 
 	cluster := cassandra.NewCluster("localhost")
