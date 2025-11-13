@@ -7,26 +7,6 @@ import (
 
 const base62Alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-func getShuffledAlphabet(salt string) string {
-	alphabet := []rune(base62Alphabet)
-	if salt == "" {
-		return base62Alphabet
-	}
-
-	hash := sha256.New()
-	hash.Write([]byte(salt))
-	hashBytes := hash.Sum(nil)
-
-	shuffled := make([]rune, len(alphabet))
-	copy(shuffled, alphabet)
-
-	for i := len(alphabet) - 1; i > 0; i-- {
-		j := int(hashBytes[i%len(hashBytes)]) % (i + 1)
-		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
-	}
-	return string(shuffled)
-}
-
 func Base62Encode(id int64, salt string) string {
 	alphabet := getShuffledAlphabet(salt)
 	var encoded string
@@ -46,4 +26,24 @@ func Base62Encode(id int64, salt string) string {
 		encoded = encoded[:4]
 	}
 	return encoded
+}
+
+func getShuffledAlphabet(salt string) string {
+	alphabet := []rune(base62Alphabet)
+	if salt == "" {
+		return base62Alphabet
+	}
+
+	hash := sha256.New()
+	hash.Write([]byte(salt))
+	hashBytes := hash.Sum(nil)
+
+	shuffled := make([]rune, len(alphabet))
+	copy(shuffled, alphabet)
+
+	for i := len(alphabet) - 1; i > 0; i-- {
+		j := int(hashBytes[i%len(hashBytes)]) % (i + 1)
+		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+	}
+	return string(shuffled)
 }

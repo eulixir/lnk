@@ -53,7 +53,7 @@ func main() {
 		logger.Fatal("Failed to set initial counter", zap.Error(err))
 	}
 
-	repository := repositories.NewRepository(logger, session)
+	repository := repositories.NewRepository(ctx, logger, session)
 	useCase := usecases.NewUseCase(usecases.NewUseCaseParams{
 		Ctx:        ctx,
 		Logger:     logger,

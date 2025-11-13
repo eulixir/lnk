@@ -40,6 +40,15 @@ func SetupDatabase(ctx context.Context, config *Config, logger *zap.Logger) (*Se
 	)
 	session.Query(createKeyspaceQuery).Exec()
 
+	cluster.Keyspace = config.Keyspace
+	sessionWithKeyspace, err := cluster.CreateSession()
+	if err != nil {
+		session.Close()
+		return nil, fmt.Errorf("failed to create session with keyspace: %w", err)
+	}
+	session.Close()
+	session = sessionWithKeyspace
+
 	if config.AutoMigrate {
 		if err := runMigrations(config, logger); err != nil {
 			return nil, fmt.Errorf("failed to run migrations: %w", err)

@@ -2,12 +2,10 @@ package entities
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type URL struct {
-	ID        uuid.UUID
+	ID        string
 	ShortCode string
 	LongURL   string
 	CreatedAt time.Time
