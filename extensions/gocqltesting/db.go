@@ -14,6 +14,9 @@ import (
 
 var nonAlphaRegex = regexp.MustCompile(`[\W]`)
 
+// NewDB creates a new isolated test keyspace by copying the schema from the template keyspace.
+// This is much faster than running migrations for each test. The keyspace is automatically
+// cleaned up when the test completes.
 func NewDB(t *testing.T, dbName string) (*cassandra.Session, error) {
 	t.Helper()
 
@@ -72,6 +75,8 @@ func NewDB(t *testing.T, dbName string) (*cassandra.Session, error) {
 	return testSession, nil
 }
 
+// copySchemaFromTemplate copies all tables and indexes from the template keyspace to the target keyspace
+// by querying system_schema tables. This provides fast schema replication without running migrations.
 func copySchemaFromTemplate(session *cassandra.Session, targetKeyspace string) error {
 	iter := session.Query(`
 		SELECT table_name 
@@ -188,6 +193,8 @@ func copySchemaFromTemplate(session *cassandra.Session, targetKeyspace string) e
 	return nil
 }
 
+// extractColumnFromIndexName extracts the column name from an index name using naming patterns.
+// Pattern: table_column_idx -> column
 func extractColumnFromIndexName(indexName, tableName string) string {
 	prefix := tableName + "_"
 	if strings.HasPrefix(indexName, prefix) {

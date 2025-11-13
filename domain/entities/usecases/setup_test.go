@@ -9,13 +9,12 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	_, tearDown, err := gocqltesting.StartDockerContainer(gocqltesting.DockerContainerConfig{
+	tearDown, err := gocqltesting.StartDockerContainer(gocqltesting.DockerContainerConfig{
 		Version:        "latest",
 		ContainerName:  "lnk-cassandra-test",
 		ReuseContainer: true,
 		Migrations: &gocqltesting.Migrations{
-			Folder: "migrations",
-			FS:     migrations.MigrationsFS,
+			FS: migrations.MigrationsFS,
 		},
 	})
 	if err != nil {
