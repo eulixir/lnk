@@ -14,10 +14,6 @@ env:
 jobs:
   build-and-lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./lnk
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
