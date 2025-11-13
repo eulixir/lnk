@@ -7,4 +7,4 @@ generate-migration:
 
 .PHONY: swagger
 swagger:
-	@swag init -g gateways/http/server.go -o docs --parseDependency --parseInternal
+	@swag init -g gateways/http/server.go -o docs

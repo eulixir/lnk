@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	_ "lnk/docs"
 	"lnk/extensions/config"
 	"lnk/gateways/http/handlers"
 

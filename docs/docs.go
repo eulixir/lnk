@@ -101,7 +101,7 @@ const docTemplate = `{
                 "tags": [
                     "urls"
                 ],
-                "summary": "Get original URL",
+                "summary": "Get original URL by short URL",
                 "parameters": [
                     {
                         "type": "string",
@@ -112,22 +112,31 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "301": {
+                        "description": "Moved Permanently",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetURLResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -166,19 +175,6 @@ const docTemplate = `{
                 "error": {
                     "type": "string",
                     "example": "error message"
-                }
-            }
-        },
-        "handlers.GetURLResponse": {
-            "type": "object",
-            "properties": {
-                "original_url": {
-                    "type": "string",
-                    "example": "https://example.com"
-                },
-                "short_url": {
-                    "type": "string",
-                    "example": "abc123"
                 }
             }
         }

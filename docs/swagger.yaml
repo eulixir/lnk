@@ -23,15 +23,6 @@ definitions:
         example: error message
         type: string
     type: object
-  handlers.GetURLResponse:
-    properties:
-      original_url:
-        example: https://example.com
-        type: string
-      short_url:
-        example: abc123
-        type: string
-    type: object
 info:
   contact: {}
   description: A URL shortener service API
@@ -53,19 +44,25 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "301":
+          description: Moved Permanently
           schema:
-            $ref: '#/definitions/handlers.GetURLResponse'
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/handlers.ErrorResponse'
-      summary: Get original URL
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get original URL by short URL
       tags:
       - urls
   /health:

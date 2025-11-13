@@ -67,23 +67,20 @@ func (h *URLsHandler) CreateURL(c *gin.Context) {
 }
 
 // GetURL godoc
-// @Summary      Get original URL
+// @Summary      Get original URL by short URL
 // @Description  Get the original URL from a short URL
 // @Tags         urls
 // @Accept       json
 // @Produce      json
 // @Param        short_url  path      string  true  "Short URL identifier"
-// @Success      200        {object}  GetURLResponse
-// @Failure      404        {object}  ErrorResponse
-// @Failure      500        {object}  ErrorResponse
+// @Success      301        {object}  map[string]string
+// @Failure      404        {object}  map[string]string
+// @Failure      500        {object}  map[string]string
 // @Router       /{short_url} [get]
 func (h *URLsHandler) GetURL(c *gin.Context) {
 	shortURL := c.Param("short_url")
 	h.logger.Info("GetURL called", zap.String("short_url", shortURL))
 
 	// TODO: Implement actual URL retrieval logic
-	c.JSON(http.StatusOK, GetURLResponse{
-		ShortURL:    shortURL,
-		OriginalURL: "https://example.com",
-	})
+	c.JSON(http.StatusPermanentRedirect, gin.H{"url": "https://example.com"})
 }
