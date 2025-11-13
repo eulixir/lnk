@@ -41,12 +41,13 @@ func NewServer(logger *zap.Logger, port string, router *gin.Engine) *Server {
 }
 
 func (s *Server) Start() error {
-	addr := fmt.Sprintf(":%s", s.port)
+	addr := ":" + s.port
 	s.logger.Info("Starting HTTP server", zap.String("address", addr))
 
 	s.srv = &http.Server{
-		Addr:    addr,
-		Handler: s.router,
+		Addr:              addr,
+		Handler:           s.router,
+		ReadHeaderTimeout: 5 * time.Second,
 	}
 
 	go func() {
@@ -65,7 +66,8 @@ func (s *Server) Shutdown(ctx context.Context) error {
 
 	s.logger.Info("Shutting down HTTP server")
 
-	shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	const shutdownTimeout = 5 * time.Second
+	shutdownCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
 
 	if err := s.srv.Shutdown(shutdownCtx); err != nil {

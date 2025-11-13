@@ -1,14 +1,15 @@
 package usecases
 
 import (
+	"context"
 	"fmt"
 
 	"lnk/domain/entities"
 	"lnk/domain/entities/helpers"
 )
 
-func (uc *UseCase) CreateShortURL(longURL string) (string, error) {
-	id, err := uc.redis.Incr(uc.ctx, uc.counterKey)
+func (uc *UseCase) CreateShortURL(ctx context.Context, longURL string) (string, error) {
+	id, err := uc.redis.Incr(ctx, uc.counterKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to increment counter: %w", err)
 	}
@@ -20,9 +21,9 @@ func (uc *UseCase) CreateShortURL(longURL string) (string, error) {
 		LongURL:   longURL,
 	}
 
-	err = uc.repository.CreateURL(url)
+	err = uc.repository.CreateURL(ctx, url)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to create URL in repository: %w", err)
 	}
 
 	return shortCode, nil

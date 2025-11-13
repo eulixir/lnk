@@ -1,10 +1,16 @@
 package middleware
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+)
+
+const (
+	httpStatusInternalServerError = 500
+	httpStatusNoContent           = 204
 )
 
 func RequestLogger(logger *zap.Logger) gin.HandlerFunc {
@@ -34,7 +40,7 @@ func Recovery(logger *zap.Logger) gin.HandlerFunc {
 			zap.Any("error", recovered),
 			zap.String("path", c.Request.URL.Path),
 		)
-		c.AbortWithStatus(500)
+		c.AbortWithStatus(httpStatusInternalServerError)
 	})
 }
 
@@ -45,8 +51,8 @@ func CORS() gin.HandlerFunc {
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
 
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(httpStatusNoContent)
 			return
 		}
 

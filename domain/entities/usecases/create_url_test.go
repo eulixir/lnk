@@ -1,8 +1,9 @@
-package usecases
+package usecases_test
 
 import (
 	"context"
 
+	"lnk/domain/entities/usecases"
 	"lnk/extensions/gocqltesting"
 	"lnk/extensions/redis/mocks"
 	"lnk/gateways/gocql/repositories"
@@ -22,13 +23,12 @@ func Test_UseCase_CreateURL(t *testing.T) {
 	ctx := context.Background()
 	logger := zap.NewNop()
 
-	repository := repositories.NewRepository(ctx, logger, session)
+	repository := repositories.NewRepository(logger, session)
 
 	mockRedis := mocks.NewMockRedis(t)
 	mockRedis.On("Incr", mock.Anything, mock.Anything).Return(int64(1), nil)
 
-	params := NewUseCaseParams{
-		Ctx:        ctx,
+	params := usecases.NewUseCaseParams{
 		Logger:     logger,
 		Repository: repository,
 		Redis:      mockRedis,
@@ -36,10 +36,10 @@ func Test_UseCase_CreateURL(t *testing.T) {
 		CounterKey: "test",
 	}
 
-	useCase := NewUseCase(params)
+	useCase := usecases.NewUseCase(params)
 
 	longURL := "https://www.google.com"
-	shortCode, err := useCase.CreateShortURL(longURL)
+	shortCode, err := useCase.CreateShortURL(ctx, longURL)
 	require.NoError(t, err)
 	require.NotEmpty(t, shortCode)
 }

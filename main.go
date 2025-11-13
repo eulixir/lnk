@@ -11,16 +11,43 @@ import (
 	"lnk/domain/entities/usecases"
 	"lnk/extensions/config"
 	"lnk/extensions/logger"
-	"lnk/extensions/redis"
-	"lnk/gateways/gocql"
+	redisPackage "lnk/extensions/redis"
+	gocqlPackage "lnk/gateways/gocql"
 	"lnk/gateways/gocql/repositories"
 	httpServer "lnk/gateways/http"
 	"lnk/gateways/http/handlers"
 
+	redis "github.com/redis/go-redis/v9"
+
+	gocql "github.com/apache/cassandra-gocql-driver/v2"
 	"go.uber.org/zap"
 )
 
 func main() {
+	cfg, logger := setupConfigAndLogger()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	session := setupDatabase(cfg, logger)
+	defer session.Close()
+
+	redisClient := setupRedis(ctx, cfg, logger)
+	defer func() {
+		if err := redisClient.Close(); err != nil {
+			logger.Error("Failed to close Redis client", zap.Error(err))
+		}
+	}()
+
+	initializeCounter(ctx, redisClient, cfg, logger)
+
+	useCase := createUseCase(cfg, logger, session, redisClient)
+	server := createAndStartServer(cfg, logger, useCase)
+
+	shutdownServer(ctx, logger, server)
+}
+
+func setupConfigAndLogger() (*config.Config, *zap.Logger) {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
@@ -32,43 +59,46 @@ func main() {
 	}
 
 	logger.Info("Starting application")
+	return cfg, logger
+}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	session, err := gocql.SetupDatabase(&cfg.Gocql, logger)
+func setupDatabase(cfg *config.Config, logger *zap.Logger) *gocql.Session {
+	session, err := gocqlPackage.SetupDatabase(&cfg.Gocql, logger)
 	if err != nil {
 		logger.Fatal("Failed to setup database", zap.Error(err))
 	}
-	defer session.Close()
+	return session
+}
 
-	redisClient, err := redis.SetupRedis(ctx, &cfg.Redis, logger)
+func setupRedis(ctx context.Context, cfg *config.Config, logger *zap.Logger) *redis.Client {
+	redisClient, err := redisPackage.SetupRedis(ctx, &cfg.Redis, logger)
 	if err != nil {
 		logger.Fatal("Failed to setup Redis", zap.Error(err))
 	}
-	defer func() {
-		if err := redisClient.Close(); err != nil {
-			logger.Error("Failed to close Redis client", zap.Error(err))
-		}
-	}()
+	return redisClient
+}
 
-	setInitialCounter, err := redis.SetInitialCounterValue(ctx, redisClient, &cfg.Redis, logger)
+func initializeCounter(ctx context.Context, redisClient *redis.Client, cfg *config.Config, logger *zap.Logger) {
+	setInitialCounter, err := redisPackage.SetInitialCounterValue(ctx, redisClient, &cfg.Redis, logger)
 	if err != nil && !setInitialCounter {
 		logger.Fatal("Failed to set initial counter", zap.Error(err))
 	}
+}
 
-	repository := repositories.NewRepository(ctx, logger, session)
-	redisAdapter := redis.NewRedisAdapter(redisClient)
+func createUseCase(cfg *config.Config, logger *zap.Logger, session *gocql.Session, redisClient *redis.Client) *usecases.UseCase {
+	repository := repositories.NewRepository(logger, session)
+	redisAdapter := redisPackage.NewRedisAdapter(redisClient)
 
-	useCase := usecases.NewUseCase(usecases.NewUseCaseParams{
-		Ctx:        ctx,
+	return usecases.NewUseCase(usecases.NewUseCaseParams{
 		Logger:     logger,
 		Repository: repository,
 		Redis:      redisAdapter,
 		Salt:       cfg.App.Base62Salt,
 		CounterKey: cfg.Redis.CounterKey,
 	})
+}
 
+func createAndStartServer(cfg *config.Config, logger *zap.Logger, useCase *usecases.UseCase) *httpServer.Server {
 	httpHandlers := handlers.NewHandlers(logger, useCase)
 
 	router := httpServer.NewRouter(httpServer.RouterConfig{
@@ -83,13 +113,18 @@ func main() {
 		logger.Fatal("Failed to start HTTP server", zap.Error(err))
 	}
 
+	return server
+}
+
+func shutdownServer(ctx context.Context, logger *zap.Logger, server *httpServer.Server) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	<-sigChan
 	logger.Info("Received shutdown signal")
 
-	shutdownCtx, shutdownCancel := context.WithTimeout(ctx, 10*time.Second)
+	const shutdownTimeout = 10 * time.Second
+	shutdownCtx, shutdownCancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer shutdownCancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {

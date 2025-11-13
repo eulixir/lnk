@@ -24,7 +24,11 @@ func NewRedisAdapter(client *redis.Client) Redis {
 }
 
 func (r *redisAdapter) Incr(ctx context.Context, key string) (int64, error) {
-	return r.client.Incr(ctx, key).Result()
+	result, err := r.client.Incr(ctx, key).Result()
+	if err != nil {
+		return 0, fmt.Errorf("failed to increment Redis key %s: %w", key, err)
+	}
+	return result, nil
 }
 
 func SetupRedis(ctx context.Context, config *Config, logger *zap.Logger) (*redis.Client, error) {

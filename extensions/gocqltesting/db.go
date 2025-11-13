@@ -12,6 +12,11 @@ import (
 	cassandra "github.com/apache/cassandra-gocql-driver/v2"
 )
 
+const (
+	connectTimeout = 30 * time.Second
+	timeout        = 10 * time.Second
+)
+
 var nonAlphaRegex = regexp.MustCompile(`[\W]`)
 
 // NewDB creates a new isolated test keyspace by copying the schema from the template keyspace.
@@ -31,7 +36,7 @@ func NewDB(t *testing.T, dbName string) (*cassandra.Session, error) {
 	}
 	dbName = nonAlphaRegex.ReplaceAllString(strings.ToLower(dbName), "_")
 
-	dropQuery := fmt.Sprintf("DROP KEYSPACE IF EXISTS %s", dbName)
+	dropQuery := "DROP KEYSPACE IF EXISTS " + dbName
 	if err := session.Query(dropQuery).Exec(); err != nil {
 		return nil, fmt.Errorf("failed to drop existing keyspace: %w", err)
 	}
@@ -57,8 +62,8 @@ func NewDB(t *testing.T, dbName string) (*cassandra.Session, error) {
 	cluster := cassandra.NewCluster("localhost")
 	cluster.Port = port
 	cluster.Keyspace = dbName
-	cluster.ConnectTimeout = 30 * time.Second
-	cluster.Timeout = 10 * time.Second
+	cluster.ConnectTimeout = connectTimeout
+	cluster.Timeout = timeout
 	cluster.Consistency = cassandra.Quorum
 
 	testSession, err := cluster.CreateSession()
@@ -69,7 +74,7 @@ func NewDB(t *testing.T, dbName string) (*cassandra.Session, error) {
 
 	t.Cleanup(func() {
 		testSession.Close()
-		_ = session.Query(fmt.Sprintf("DROP KEYSPACE IF EXISTS %s", dbName)).Exec()
+		_ = session.Query("DROP KEYSPACE IF EXISTS " + dbName).Exec()
 	})
 
 	return testSession, nil
@@ -78,6 +83,21 @@ func NewDB(t *testing.T, dbName string) (*cassandra.Session, error) {
 // copySchemaFromTemplate copies all tables and indexes from the template keyspace to the target keyspace
 // by querying system_schema tables. This provides fast schema replication without running migrations.
 func copySchemaFromTemplate(session *cassandra.Session, targetKeyspace string) error {
+	tableNames, err := getTableNames(session)
+	if err != nil {
+		return err
+	}
+
+	for _, tableName := range tableNames {
+		if err := copyTable(session, targetKeyspace, tableName); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func getTableNames(session *cassandra.Session) ([]string, error) {
 	iter := session.Query(`
 		SELECT table_name 
 		FROM system_schema.tables 
@@ -93,101 +113,130 @@ func copySchemaFromTemplate(session *cassandra.Session, targetKeyspace string) e
 		tableNames = append(tableNames, tableName)
 	}
 	if err := iter.Close(); err != nil {
-		return fmt.Errorf("failed to get tables: %w", err)
+		return nil, fmt.Errorf("failed to get tables: %w", err)
 	}
 
-	for _, tableName := range tableNames {
-		colIter := session.Query(`
-			SELECT column_name, type, kind, position
-			FROM system_schema.columns
-			WHERE keyspace_name = ? AND table_name = ?
-		`, _templateKeyspace, tableName).Iter()
+	return tableNames, nil
+}
 
-		type columnInfo struct {
-			name     string
-			typ      string
-			kind     string
-			position int
-		}
+type columnInfo struct {
+	name     string
+	typ      string
+	kind     string
+	position int
+}
 
-		var columnInfos []columnInfo
-		var columnName, columnType, columnKind string
-		var position int
+func copyTable(session *cassandra.Session, targetKeyspace, tableName string) error {
+	columnInfos, err := getColumnInfos(session, tableName)
+	if err != nil {
+		return err
+	}
 
-		for colIter.Scan(&columnName, &columnType, &columnKind, &position) {
-			columnInfos = append(columnInfos, columnInfo{
-				name:     columnName,
-				typ:      columnType,
-				kind:     columnKind,
-				position: position,
-			})
-		}
-		if err := colIter.Close(); err != nil {
-			return fmt.Errorf("failed to get columns for table %s: %w", tableName, err)
-		}
+	if err := createTable(session, targetKeyspace, tableName, columnInfos); err != nil {
+		return err
+	}
 
-		sort.Slice(columnInfos, func(i, j int) bool {
-			return columnInfos[i].position < columnInfos[j].position
+	return copyIndexes(session, targetKeyspace, tableName)
+}
+
+func getColumnInfos(session *cassandra.Session, tableName string) ([]columnInfo, error) {
+	colIter := session.Query(`
+		SELECT column_name, type, kind, position
+		FROM system_schema.columns
+		WHERE keyspace_name = ? AND table_name = ?
+	`, _templateKeyspace, tableName).Iter()
+
+	var columnInfos []columnInfo
+	var columnName, columnType, columnKind string
+	var position int
+
+	for colIter.Scan(&columnName, &columnType, &columnKind, &position) {
+		columnInfos = append(columnInfos, columnInfo{
+			name:     columnName,
+			typ:      columnType,
+			kind:     columnKind,
+			position: position,
 		})
+	}
+	if err := colIter.Close(); err != nil {
+		return nil, fmt.Errorf("failed to get columns for table %s: %w", tableName, err)
+	}
 
-		var columns []string
-		var partitionKeys []string
-		var clusteringKeys []string
+	sort.Slice(columnInfos, func(i, j int) bool {
+		return columnInfos[i].position < columnInfos[j].position
+	})
 
-		for _, col := range columnInfos {
-			columns = append(columns, fmt.Sprintf("%s %s", col.name, col.typ))
-			switch col.kind {
-			case "partition_key":
-				partitionKeys = append(partitionKeys, col.name)
-			case "clustering":
-				clusteringKeys = append(clusteringKeys, col.name)
-			}
+	return columnInfos, nil
+}
+
+func createTable(session *cassandra.Session, targetKeyspace, tableName string, columnInfos []columnInfo) error {
+	var columns []string
+	var partitionKeys []string
+	var clusteringKeys []string
+
+	for _, col := range columnInfos {
+		columns = append(columns, fmt.Sprintf("%s %s", col.name, col.typ))
+		switch col.kind {
+		case "partition_key":
+			partitionKeys = append(partitionKeys, col.name)
+		case "clustering":
+			clusteringKeys = append(clusteringKeys, col.name)
+		}
+	}
+
+	createStmt := buildCreateTableStatement(targetKeyspace, tableName, columns, partitionKeys, clusteringKeys)
+
+	if err := session.Query(createStmt).Exec(); err != nil {
+		return fmt.Errorf("failed to create table %s: %w", tableName, err)
+	}
+
+	return nil
+}
+
+func buildCreateTableStatement(targetKeyspace, tableName string, columns, partitionKeys, clusteringKeys []string) string {
+	createStmt := fmt.Sprintf("CREATE TABLE %s.%s (", targetKeyspace, tableName)
+	createStmt += strings.Join(columns, ", ")
+	createStmt += ", PRIMARY KEY ("
+
+	if len(partitionKeys) > 0 {
+		if len(partitionKeys) == 1 {
+			createStmt += partitionKeys[0]
+		} else {
+			createStmt += "(" + strings.Join(partitionKeys, ", ") + ")"
+		}
+		if len(clusteringKeys) > 0 {
+			createStmt += ", " + strings.Join(clusteringKeys, ", ")
+		}
+	}
+	createStmt += "))"
+
+	return createStmt
+}
+
+func copyIndexes(session *cassandra.Session, targetKeyspace, tableName string) error {
+	idxIter := session.Query(`
+		SELECT index_name, kind, options
+		FROM system_schema.indexes
+		WHERE keyspace_name = ? AND table_name = ?
+	`, _templateKeyspace, tableName).Iter()
+
+	var indexName, kind string
+	for idxIter.Scan(&indexName, &kind, new(string)) {
+		if kind == "KEYS" {
+			continue
 		}
 
-		createStmt := fmt.Sprintf("CREATE TABLE %s.%s (", targetKeyspace, tableName)
-		createStmt += strings.Join(columns, ", ")
-		createStmt += ", PRIMARY KEY ("
-
-		if len(partitionKeys) > 0 {
-			if len(partitionKeys) == 1 {
-				createStmt += partitionKeys[0]
-			} else {
-				createStmt += "(" + strings.Join(partitionKeys, ", ") + ")"
-			}
-			if len(clusteringKeys) > 0 {
-				createStmt += ", " + strings.Join(clusteringKeys, ", ")
+		columnName := extractColumnFromIndexName(indexName, tableName)
+		if columnName != "" {
+			createIndexStmt := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s.%s (%s)",
+				indexName, targetKeyspace, tableName, columnName)
+			if err := session.Query(createIndexStmt).Exec(); err != nil {
+				_ = err
 			}
 		}
-		createStmt += "))"
-
-		if err := session.Query(createStmt).Exec(); err != nil {
-			return fmt.Errorf("failed to create table %s: %w", tableName, err)
-		}
-
-		idxIter := session.Query(`
-			SELECT index_name, kind, options
-			FROM system_schema.indexes
-			WHERE keyspace_name = ? AND table_name = ?
-		`, _templateKeyspace, tableName).Iter()
-
-		var indexName, kind, options string
-		for idxIter.Scan(&indexName, &kind, &options) {
-			if kind == "KEYS" {
-				continue
-			}
-
-			columnName := extractColumnFromIndexName(indexName, tableName)
-			if columnName != "" {
-				createIndexStmt := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s.%s (%s)",
-					indexName, targetKeyspace, tableName, columnName)
-				if err := session.Query(createIndexStmt).Exec(); err != nil {
-					_ = err
-				}
-			}
-		}
-		if err := idxIter.Close(); err != nil {
-			_ = err
-		}
+	}
+	if err := idxIter.Close(); err != nil {
+		_ = err
 	}
 
 	return nil
