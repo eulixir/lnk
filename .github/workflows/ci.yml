@@ -102,9 +102,6 @@ jobs:
             ${{ runner.os }}-go${{ env.GO_VERSION }}-build-
             ${{ runner.os }}-go-build-
 
-      - name: Download dependencies
-        run: go mod download
-
       - name: Verify dependencies
         run: go mod verify
 
