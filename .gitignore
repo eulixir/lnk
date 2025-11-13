@@ -30,7 +30,6 @@ go.work.sum
 
 # dotenv environment files
 .env
-.env.*
 
 # Logs
 *.log
