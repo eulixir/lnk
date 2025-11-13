@@ -4,3 +4,7 @@ name := $(NAME)
 .PHONY: generate-migration
 generate-migration:
 	@migrate create -ext sql -dir $(path) -seq $(name)
+
+.PHONY: swagger
+swagger:
+	@swag init -g gateways/http/server.go -o docs --parseDependency --parseInternal
