@@ -6,11 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	_ "lnk/docs"
-
-	"go.uber.org/zap"
-
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // @title           LNK URL Shortener API
@@ -27,6 +24,12 @@ type Server struct {
 	port   string
 	srv    *http.Server
 	router *gin.Engine
+}
+
+type Config struct {
+	Logger *zap.Logger
+	Port   string
+	Router *gin.Engine
 }
 
 func NewServer(logger *zap.Logger, port string, router *gin.Engine) *Server {

@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"lnk/domain/entities/usecases"
-	"lnk/gateways/http/middleware"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -13,50 +12,28 @@ import (
 )
 
 type Handlers struct {
-	router      *gin.Engine
 	logger      *zap.Logger
-	env         string
 	URLsHandler *URLsHandler
 	useCase     *usecases.UseCase
 }
 
-type HttpHandlers struct {
-	Router  *gin.Engine
-	Logger  *zap.Logger
-	Env     string
-	UseCase *usecases.UseCase
+func NewHandlers(logger *zap.Logger, useCase *usecases.UseCase) *Handlers {
+	return &Handlers{
+		logger:      logger,
+		URLsHandler: NewURLsHandler(logger, useCase),
+		useCase:     useCase,
+	}
 }
 
-func NewHttpHandlers(httpHandlers *HttpHandlers) *Handlers {
-	h := &Handlers{
-		router:      httpHandlers.Router,
-		logger:      httpHandlers.Logger,
-		env:         httpHandlers.Env,
-		URLsHandler: NewURLsHandler(httpHandlers.Logger),
-		useCase:     httpHandlers.UseCase,
+func (h *Handlers) RegisterRoutes(router *gin.Engine, env string) {
+	if env == "development" {
+		router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}
 
-	h.setupMiddleware()
-	h.setupHandlers()
+	router.GET("/health", h.healthCheck)
 
-	return h
-}
-
-func (h *Handlers) setupMiddleware() {
-	h.router.Use(middleware.Recovery(h.logger))
-
-	h.router.Use(middleware.RequestLogger(h.logger))
-
-	h.router.Use(middleware.CORS())
-}
-
-func (h *Handlers) setupHandlers() {
-	if h.env == "development" {
-		h.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	}
-	h.router.GET("/health", h.healthCheck)
-	h.router.POST("/shorten", h.URLsHandler.CreateURL)
-	h.router.GET("/:short_url", h.URLsHandler.GetURL)
+	router.POST("/shorten", h.URLsHandler.CreateURL)
+	router.GET("/:short_url", h.URLsHandler.GetURL)
 }
 
 // healthCheck godoc

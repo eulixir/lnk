@@ -16,9 +16,7 @@ import (
 	"lnk/gateways/gocql/repositories"
 	httpServer "lnk/gateways/http"
 	"lnk/gateways/http/handlers"
-	"lnk/gateways/http/middleware"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -53,15 +51,14 @@ func main() {
 	repository := repositories.NewRepository(logger, session)
 	useCase := usecases.NewUseCase(logger, repository)
 
-	router := setupGinEngine(logger, cfg)
+	httpHandlers := handlers.NewHandlers(logger, useCase)
 
-	httpHandlers := handlers.NewHttpHandlers(&handlers.HttpHandlers{
-		Router:  router,
-		Logger:  logger,
-		Env:     cfg.App.ENV,
-		UseCase: useCase,
+	router := httpServer.NewRouter(httpServer.RouterConfig{
+		Logger:   logger,
+		GinMode:  cfg.App.GinMode,
+		Env:      cfg.App.ENV,
+		Handlers: httpHandlers,
 	})
-	_ = httpHandlers // handlers are registered to router during initialization
 
 	server := httpServer.NewServer(logger, cfg.App.Port, router)
 	if err := server.Start(); err != nil {
@@ -82,14 +79,4 @@ func main() {
 	}
 
 	logger.Info("Application stopped")
-}
-
-func setupGinEngine(logger *zap.Logger, cfg *config.Config) *gin.Engine {
-	gin.SetMode(cfg.App.GinMode)
-	router := gin.New()
-	router.Use(middleware.Recovery(logger))
-	router.Use(middleware.RequestLogger(logger))
-	router.Use(middleware.CORS())
-
-	return router
 }

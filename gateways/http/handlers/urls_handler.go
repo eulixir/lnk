@@ -3,6 +3,8 @@ package handlers
 import (
 	"net/http"
 
+	"lnk/domain/entities/usecases"
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -26,12 +28,14 @@ type ErrorResponse struct {
 }
 
 type URLsHandler struct {
-	logger *zap.Logger
+	logger  *zap.Logger
+	useCase *usecases.UseCase
 }
 
-func NewURLsHandler(logger *zap.Logger) *URLsHandler {
+func NewURLsHandler(logger *zap.Logger, useCase *usecases.UseCase) *URLsHandler {
 	return &URLsHandler{
-		logger: logger,
+		logger:  logger,
+		useCase: useCase,
 	}
 }
 
