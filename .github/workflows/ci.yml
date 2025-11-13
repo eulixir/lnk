@@ -46,6 +46,7 @@ jobs:
           cache: true
 
       - name: Check formatting
+        working-directory: ${{ github.workspace }}
         run: |
           if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
             echo "Code is not formatted. Run 'gofmt -s -w .'"
@@ -54,12 +55,15 @@ jobs:
           fi
 
       - name: Run go vet
+        working-directory: ${{ github.workspace }}
         run: go vet ./...
 
       - name: Verify dependencies
+        working-directory: ${{ github.workspace }}
         run: go mod verify
 
       - name: Check for unused dependencies
+        working-directory: ${{ github.workspace }}
         run: |
           go mod tidy
           if [ -n "$(git status --porcelain go.mod go.sum)" ]; then
@@ -103,9 +107,11 @@ jobs:
             ${{ runner.os }}-go-build-
 
       - name: Verify dependencies
+        working-directory: ${{ github.workspace }}
         run: go mod verify
 
       - name: Wait for Docker to be ready
+        working-directory: ${{ github.workspace }}
         run: |
           echo "Waiting for Docker daemon..."
           until docker info > /dev/null 2>&1; do
@@ -115,10 +121,12 @@ jobs:
           echo "Docker daemon is ready"
 
       - name: Run tests
+        working-directory: ${{ github.workspace }}
         run: |
           go test -timeout 120s -v -race -coverprofile=coverage.out ./...
 
       - name: Generate coverage report
+        working-directory: ${{ github.workspace }}
         run: make coverage
         continue-on-error: true
 
