@@ -9,6 +9,24 @@ import (
 	"go.uber.org/zap"
 )
 
+// Redis is an interface for Redis operations.
+// This interface allows for easy mocking in tests.
+type Redis interface {
+	Incr(ctx context.Context, key string) (int64, error)
+}
+
+type redisAdapter struct {
+	client *redis.Client
+}
+
+func NewRedisAdapter(client *redis.Client) Redis {
+	return &redisAdapter{client: client}
+}
+
+func (r *redisAdapter) Incr(ctx context.Context, key string) (int64, error) {
+	return r.client.Incr(ctx, key).Result()
+}
+
 func SetupRedis(ctx context.Context, config *Config, logger *zap.Logger) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", config.Host, config.Port),

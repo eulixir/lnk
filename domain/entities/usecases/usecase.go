@@ -2,9 +2,9 @@ package usecases
 
 import (
 	"context"
+	"lnk/extensions/redis"
 	"lnk/gateways/gocql/repositories"
 
-	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -12,7 +12,7 @@ type UseCase struct {
 	ctx        context.Context
 	logger     *zap.Logger
 	repository *repositories.Repository
-	redis      *redis.Client
+	redis      redis.Redis
 	salt       string
 	counterKey string
 }
@@ -21,7 +21,7 @@ type NewUseCaseParams struct {
 	Ctx        context.Context
 	Logger     *zap.Logger
 	Repository *repositories.Repository
-	Redis      *redis.Client
+	Redis      redis.Redis
 	Salt       string
 	CounterKey string
 }

@@ -36,7 +36,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	session, err := gocql.SetupDatabase(ctx, &cfg.Gocql, logger)
+	session, err := gocql.SetupDatabase(&cfg.Gocql, logger)
 	if err != nil {
 		logger.Fatal("Failed to setup database", zap.Error(err))
 	}
@@ -54,11 +54,13 @@ func main() {
 	}
 
 	repository := repositories.NewRepository(ctx, logger, session)
+	redisAdapter := redis.NewRedisAdapter(redisClient)
+
 	useCase := usecases.NewUseCase(usecases.NewUseCaseParams{
 		Ctx:        ctx,
 		Logger:     logger,
 		Repository: repository,
-		Redis:      redisClient,
+		Redis:      redisAdapter,
 		Salt:       cfg.App.Base62Salt,
 		CounterKey: cfg.Redis.CounterKey,
 	})

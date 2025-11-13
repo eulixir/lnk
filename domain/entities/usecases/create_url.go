@@ -8,7 +8,7 @@ import (
 )
 
 func (uc *UseCase) CreateShortURL(longURL string) (string, error) {
-	id, err := uc.redis.Incr(uc.ctx, uc.counterKey).Result()
+	id, err := uc.redis.Incr(uc.ctx, uc.counterKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to increment counter: %w", err)
 	}
