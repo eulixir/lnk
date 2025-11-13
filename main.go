@@ -49,7 +49,7 @@ func main() {
 	defer redisClient.Close()
 
 	repository := repositories.NewRepository(logger, session)
-	useCase := usecases.NewUseCase(logger, repository)
+	useCase := usecases.NewUseCase(logger, repository, redisClient)
 
 	httpHandlers := handlers.NewHandlers(logger, useCase)
 

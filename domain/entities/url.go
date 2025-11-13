@@ -8,7 +8,7 @@ import (
 
 type URL struct {
 	ID        uuid.UUID
-	RawURL    string
-	ShortURL  string
+	ShortCode string
+	LongURL   string
 	CreatedAt time.Time
 }
