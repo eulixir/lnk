@@ -2,6 +2,7 @@ package config
 
 import (
 	"lnk/extensions/logger"
+	"lnk/extensions/redis"
 	"lnk/gateways/gocql"
 
 	"github.com/joho/godotenv"
@@ -9,9 +10,16 @@ import (
 )
 
 type Config struct {
-	Port   string `envconfig:"PORT" default:"8080"`
+	App    App
 	Gocql  gocql.Config
+	Redis  redis.Config
 	Logger logger.Config
+}
+
+type App struct {
+	ENV     string `envconfig:"ENV" default:"development"`
+	Port    string `envconfig:"PORT" default:"8080"`
+	GinMode string `envconfig:"GIN_MODE" default:"debug"`
 }
 
 func LoadConfig() (*Config, error) {

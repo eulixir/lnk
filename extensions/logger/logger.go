@@ -7,7 +7,6 @@ import (
 )
 
 func NewLogger(config Config) (*zap.Logger, error) {
-
 	if config.Level == "debug" {
 		logger, err := zap.NewDevelopment()
 		if err != nil {
@@ -15,6 +14,7 @@ func NewLogger(config Config) (*zap.Logger, error) {
 		}
 		return logger, nil
 	}
+
 	logger, err := zap.NewProduction()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create production logger: %w", err)
