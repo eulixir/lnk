@@ -49,7 +49,13 @@ func main() {
 	defer redisClient.Close()
 
 	repository := repositories.NewRepository(logger, session)
-	useCase := usecases.NewUseCase(logger, repository, redisClient)
+	useCase := usecases.NewUseCase(usecases.NewUseCaseParams{
+		Ctx:        ctx,
+		Logger:     logger,
+		Repository: repository,
+		Redis:      redisClient,
+		Salt:       cfg.App.Base62Salt,
+	})
 
 	httpHandlers := handlers.NewHandlers(logger, useCase)
 

@@ -56,11 +56,14 @@ func (h *URLsHandler) CreateURL(c *gin.Context) {
 		return
 	}
 
-	h.logger.Info("CreateURL called", zap.String("url", req.URL))
+	shortURL, err := h.useCase.CreateShortURL(req.URL)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
 
-	// TODO: Implement actual URL shortening logic
 	c.JSON(http.StatusOK, CreateURLResponse{
-		ShortURL:    "abc123",
+		ShortURL:    shortURL,
 		OriginalURL: req.URL,
 	})
 }
