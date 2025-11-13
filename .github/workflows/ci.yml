@@ -28,7 +28,7 @@ jobs:
         id: cache-golangci-lint
         uses: actions/cache@v4
         with:
-          path: ~/.cache/golangci-lint
+          path: /home/runner/.cache/golangci-lint
           key: golangci-lint-v2-${{ runner.os }}-cache
 
       - name: Install golangci-lint v2
@@ -39,7 +39,7 @@ jobs:
       - name: Lint
         run: golangci-lint run
         env:
-          GOLANGCI_LINT_CACHE: ~/.cache/golangci-lint
+          GOLANGCI_LINT_CACHE: /home/runner/.cache/golangci-lint
 
       - name: Test
         run: go test ./...
