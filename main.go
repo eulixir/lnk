@@ -10,6 +10,7 @@ import (
 
 	"lnk/extensions/config"
 	"lnk/extensions/logger"
+	"lnk/extensions/redis"
 	"lnk/gateways/gocql"
 	httpServer "lnk/gateways/http"
 
@@ -38,7 +39,13 @@ func main() {
 	}
 	defer session.Close()
 
-	server := httpServer.NewServer(logger, cfg.App.Port)
+	redisClient, err := redis.SetupRedis(ctx, &cfg.Redis, logger)
+	if err != nil {
+		logger.Fatal("Failed to setup Redis", zap.Error(err))
+	}
+	defer redisClient.Close()
+
+	server := httpServer.NewServer(logger, cfg.App.Port, cfg.App.GinMode)
 	if err := server.Start(); err != nil {
 		logger.Fatal("Failed to start HTTP server", zap.Error(err))
 	}

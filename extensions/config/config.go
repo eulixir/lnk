@@ -17,8 +17,9 @@ type Config struct {
 }
 
 type App struct {
-	ENV  string `envconfig:"ENV" default:"development"`
-	Port string `envconfig:"PORT" default:"8080"`
+	ENV     string `envconfig:"ENV" default:"development"`
+	Port    string `envconfig:"PORT" default:"8080"`
+	GinMode string `envconfig:"GIN_MODE" default:"debug"`
 }
 
 func LoadConfig() (*Config, error) {

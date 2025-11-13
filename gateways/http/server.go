@@ -8,6 +8,7 @@ import (
 
 	_ "lnk/docs"
 	"lnk/gateways/http/handlers"
+	"lnk/gateways/http/middleware"
 
 	"go.uber.org/zap"
 
@@ -31,8 +32,13 @@ type Server struct {
 	srv      *http.Server
 }
 
-func NewServer(logger *zap.Logger, port string) *Server {
-	router := gin.Default()
+func NewServer(logger *zap.Logger, port string, ginMode string) *Server {
+	gin.SetMode(ginMode)
+
+	router := gin.New()
+	router.Use(middleware.Recovery(logger))
+	router.Use(middleware.RequestLogger(logger))
+	router.Use(middleware.CORS())
 
 	httpHandlers := handlers.NewHttpHandlers(router, logger, port)
 
