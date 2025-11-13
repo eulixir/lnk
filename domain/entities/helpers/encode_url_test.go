@@ -4,7 +4,9 @@ import (
 	"testing"
 )
 
-func TestBase62Encode(t *testing.T) {
+func Test_Helper_Base62Encode(t *testing.T) {
+	t.Parallel()
+
 	salt := "salt"
 	tests := []struct {
 		id   int64

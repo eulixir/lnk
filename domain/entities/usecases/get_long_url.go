@@ -1,16 +1,18 @@
 package usecases
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func (uc *UseCase) GetLongURL(shortCode string) (string, error) {
 	url, err := uc.repository.GetURLByShortCode(shortCode)
 
 	if url == nil {
-		return "", fmt.Errorf("URL not found")
+		return "", ErrURLNotFound
 	}
 
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to get URL by short code: %w", err)
 	}
 
 	return url.LongURL, nil

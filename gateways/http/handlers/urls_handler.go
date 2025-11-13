@@ -84,7 +84,7 @@ func (h *URLsHandler) GetURL(c *gin.Context) {
 
 	longURL, err := h.useCase.GetLongURL(shortCode)
 	if err != nil {
-		if errors.Is(err, errors.New("URL not found")) {
+		if errors.Is(err, usecases.ErrURLNotFound) {
 			c.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
 			return
 		}

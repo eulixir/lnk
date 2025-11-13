@@ -2,11 +2,15 @@ package usecases
 
 import (
 	"context"
+	"errors"
 	"lnk/extensions/redis"
 	"lnk/gateways/gocql/repositories"
 
 	"go.uber.org/zap"
 )
+
+// ErrURLNotFound is returned when a URL is not found
+var ErrURLNotFound = errors.New("URL not found")
 
 type UseCase struct {
 	ctx        context.Context

@@ -13,7 +13,9 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestCreateURL(t *testing.T) {
+func Test_UseCase_CreateURL(t *testing.T) {
+	t.Parallel()
+
 	session, err := gocqltesting.NewDB(t, t.Name())
 	require.NoError(t, err)
 

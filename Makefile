@@ -13,3 +13,10 @@ swagger:
 generate:
 	@make swagger
 	@PATH="$$(go env GOPATH)/bin:$$PATH" mockery --all
+	
+.PHONY: test
+test:
+	@go test -timeout 30s -run ./...
+	
+coverage:
+	@go test ./... -coverprofile=coverage.out
