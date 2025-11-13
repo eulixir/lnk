@@ -60,6 +60,7 @@ func main() {
 		Repository: repository,
 		Redis:      redisClient,
 		Salt:       cfg.App.Base62Salt,
+		CounterKey: cfg.Redis.CounterKey,
 	})
 
 	httpHandlers := handlers.NewHandlers(logger, useCase)

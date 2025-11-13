@@ -14,6 +14,7 @@ type UseCase struct {
 	repository *repositories.Repository
 	redis      *redis.Client
 	salt       string
+	counterKey string
 }
 
 type NewUseCaseParams struct {
@@ -22,6 +23,7 @@ type NewUseCaseParams struct {
 	Repository *repositories.Repository
 	Redis      *redis.Client
 	Salt       string
+	CounterKey string
 }
 
 func NewUseCase(params NewUseCaseParams) *UseCase {
@@ -31,5 +33,6 @@ func NewUseCase(params NewUseCaseParams) *UseCase {
 		repository: params.Repository,
 		redis:      params.Redis,
 		salt:       params.Salt,
+		counterKey: params.CounterKey,
 	}
 }
