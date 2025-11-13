@@ -1,3 +1,12 @@
+version: "2"
+run:
+  tests: true
+output:
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
 linters:
   default: all
   disable:
@@ -13,34 +22,60 @@ linters:
     - musttag
     - nlreturn
     - nonamedreturns
+    - revive
     - tagalign
     - tagliatelle
     - varnamelen
     - wsl
-    - revive
+  settings:
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    govet:
+      enable-all: true
+    misspell:
+      locale: US
+    staticcheck:
+      checks:
+        - all
   exclusions:
     generated: lax
-    presets:
-      - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
+    rules:
+      - linters:
+          - errcheck
+          - gosec
+          - unparam
+        path: _test\.go
+      - linters:
+          - errcheck
+        path: _test\.go
+        text: Error return value of .((t|b|tb|f|g|gb)\.(Fatal|Fatalf|Skip|Skipf)|.*\.Errorf?|.*\.Fail(Now)?). is not checked
+      - linters:
+          - all
+        path: mocks/
+      - linters:
+          - all
+        path: docs/
     paths:
-      - mock\.go$
-      - mock_[^/]*\.go$
       - third_party$
       - builtin$
       - examples$
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
 formatters:
   enable:
     - gci
+    - gofmt
     - gofumpt
     - goimports
   exclusions:
     generated: lax
     paths:
-      - mock\.go$
-      - mock_[^/]*\.go$
       - third_party$
       - builtin$
       - examples$
