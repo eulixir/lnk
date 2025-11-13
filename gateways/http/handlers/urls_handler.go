@@ -3,6 +3,8 @@ package handlers
 import (
 	"net/http"
 
+	"lnk/domain/entities/usecases"
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -26,12 +28,14 @@ type ErrorResponse struct {
 }
 
 type URLsHandler struct {
-	logger *zap.Logger
+	logger  *zap.Logger
+	useCase *usecases.UseCase
 }
 
-func NewURLsHandler(logger *zap.Logger) *URLsHandler {
+func NewURLsHandler(logger *zap.Logger, useCase *usecases.UseCase) *URLsHandler {
 	return &URLsHandler{
-		logger: logger,
+		logger:  logger,
+		useCase: useCase,
 	}
 }
 
@@ -52,11 +56,14 @@ func (h *URLsHandler) CreateURL(c *gin.Context) {
 		return
 	}
 
-	h.logger.Info("CreateURL called", zap.String("url", req.URL))
+	shortURL, err := h.useCase.CreateShortURL(req.URL)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
 
-	// TODO: Implement actual URL shortening logic
 	c.JSON(http.StatusOK, CreateURLResponse{
-		ShortURL:    "abc123",
+		ShortURL:    shortURL,
 		OriginalURL: req.URL,
 	})
 }
@@ -72,8 +79,13 @@ func (h *URLsHandler) CreateURL(c *gin.Context) {
 // @Failure      500        {object}  map[string]string
 // @Router       /{short_url} [get]
 func (h *URLsHandler) GetURL(c *gin.Context) {
-	shortURL := c.Param("short_url")
-	h.logger.Info("GetURL called", zap.String("short_url", shortURL))
+	shortCode := c.Param("short_url")
 
-	c.JSON(http.StatusPermanentRedirect, gin.H{"url": "https://example.com"})
+	longURL, err := h.useCase.GetLongURL(shortCode)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusPermanentRedirect, gin.H{"url": longURL})
 }
