@@ -54,11 +54,13 @@ func main() {
 	}
 
 	repository := repositories.NewRepository(ctx, logger, session)
+	redisAdapter := redis.NewRedisAdapter(redisClient)
+
 	useCase := usecases.NewUseCase(usecases.NewUseCaseParams{
 		Ctx:        ctx,
 		Logger:     logger,
 		Repository: repository,
-		Redis:      redisClient,
+		Redis:      redisAdapter,
 		Salt:       cfg.App.Base62Salt,
 		CounterKey: cfg.Redis.CounterKey,
 	})
