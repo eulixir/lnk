@@ -7,24 +7,20 @@ import (
 	"go.uber.org/zap"
 )
 
-// CreateURLRequest represents the request body for creating a short URL
 type CreateURLRequest struct {
 	URL string `json:"url" example:"https://example.com" binding:"required"`
 }
 
-// CreateURLResponse represents the response for creating a short URL
 type CreateURLResponse struct {
 	ShortURL    string `json:"short_url" example:"abc123"`
 	OriginalURL string `json:"original_url" example:"https://example.com"`
 }
 
-// GetURLResponse represents the response for getting a URL
 type GetURLResponse struct {
 	ShortURL    string `json:"short_url" example:"abc123"`
 	OriginalURL string `json:"original_url" example:"https://example.com"`
 }
 
-// ErrorResponse represents an error response
 type ErrorResponse struct {
 	Error string `json:"error" example:"error message"`
 }
@@ -39,7 +35,6 @@ func NewURLsHandler(logger *zap.Logger) *URLsHandler {
 	}
 }
 
-// CreateURL godoc
 // @Summary      Create a short URL
 // @Description  Create a short URL from a long URL
 // @Tags         urls
@@ -66,7 +61,6 @@ func (h *URLsHandler) CreateURL(c *gin.Context) {
 	})
 }
 
-// GetURL godoc
 // @Summary      Get original URL by short URL
 // @Description  Get the original URL from a short URL
 // @Tags         urls
@@ -81,6 +75,5 @@ func (h *URLsHandler) GetURL(c *gin.Context) {
 	shortURL := c.Param("short_url")
 	h.logger.Info("GetURL called", zap.String("short_url", shortURL))
 
-	// TODO: Implement actual URL retrieval logic
 	c.JSON(http.StatusPermanentRedirect, gin.H{"url": "https://example.com"})
 }
