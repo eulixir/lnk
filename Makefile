@@ -8,3 +8,8 @@ generate-migration:
 .PHONY: swagger
 swagger:
 	@swag init -g gateways/http/server.go -o docs
+
+.PHONY: generate
+generate:
+	@make swagger
+	@PATH="$$(go env GOPATH)/bin:$$PATH" mockery --all

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"lnk/domain/entities/usecases"
@@ -74,8 +75,8 @@ func (h *URLsHandler) CreateURL(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        short_url  path      string  true  "Short URL identifier"
-// @Success      301        {object}  map[string]string
-// @Failure      404        {object}  map[string]string
+// @Success      308        {object}  map[string]string
+// @Failure      404        {object}  ErrorResponse
 // @Failure      500        {object}  map[string]string
 // @Router       /{short_url} [get]
 func (h *URLsHandler) GetURL(c *gin.Context) {
@@ -83,8 +84,14 @@ func (h *URLsHandler) GetURL(c *gin.Context) {
 
 	longURL, err := h.useCase.GetLongURL(shortCode)
 	if err != nil {
+		if errors.Is(err, errors.New("URL not found")) {
+			c.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		return
+
 	}
 
 	c.JSON(http.StatusPermanentRedirect, gin.H{"url": longURL})

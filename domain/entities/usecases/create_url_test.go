@@ -4,9 +4,11 @@ import (
 	"context"
 
 	"lnk/extensions/gocqltesting"
+	"lnk/extensions/redis/mocks"
 	"lnk/gateways/gocql/repositories"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 )
@@ -20,11 +22,14 @@ func TestCreateURL(t *testing.T) {
 
 	repository := repositories.NewRepository(ctx, logger, session)
 
+	mockRedis := mocks.NewMockRedis(t)
+	mockRedis.On("Incr", mock.Anything, mock.Anything).Return(int64(1), nil)
+
 	params := NewUseCaseParams{
 		Ctx:        ctx,
 		Logger:     logger,
 		Repository: repository,
-		Redis:      &mockRedisAdapter{},
+		Redis:      mockRedis,
 		Salt:       "test",
 		CounterKey: "test",
 	}
@@ -35,10 +40,4 @@ func TestCreateURL(t *testing.T) {
 	shortCode, err := useCase.CreateShortURL(longURL)
 	require.NoError(t, err)
 	require.NotEmpty(t, shortCode)
-}
-
-type mockRedisAdapter struct{}
-
-func (m *mockRedisAdapter) Incr(ctx context.Context, key string) (int64, error) {
-	return 1, nil
 }

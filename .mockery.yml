@@ -1,0 +1,10 @@
+with-expecter: true
+packages:
+  lnk/extensions/redis:
+    interfaces:
+      Redis:
+        config:
+          dir: extensions/redis/mocks
+          filename: redis_mock.go
+          mockname: MockRedis
+          disable-version-string: false
