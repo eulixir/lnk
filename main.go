@@ -36,7 +36,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	session, err := gocql.SetupDatabase(ctx, &cfg.Gocql, logger)
+	session, err := gocql.SetupDatabase(&cfg.Gocql, logger)
 	if err != nil {
 		logger.Fatal("Failed to setup database", zap.Error(err))
 	}

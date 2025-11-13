@@ -10,8 +10,9 @@ import (
 
 func TestMain(m *testing.M) {
 	_, tearDown, err := gocqltesting.StartDockerContainer(gocqltesting.DockerContainerConfig{
-		Version:       "latest",
-		ContainerName: "lnk-cassandra-test",
+		Version:        "latest",
+		ContainerName:  "lnk-cassandra-test",
+		ReuseContainer: true,
 		Migrations: &gocqltesting.Migrations{
 			Folder: "migrations",
 			FS:     migrations.MigrationsFS,

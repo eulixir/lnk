@@ -1,7 +1,6 @@
 package gocql
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -15,11 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Session struct {
-	*gocql.Session
-}
-
-func SetupDatabase(ctx context.Context, config *Config, logger *zap.Logger) (*gocql.Session, error) {
+func SetupDatabase(config *Config, logger *zap.Logger) (*gocql.Session, error) {
 	cluster := gocql.NewCluster(config.Host)
 	cluster.Port = config.Port
 	cluster.Authenticator = gocql.PasswordAuthenticator{
