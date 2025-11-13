@@ -37,7 +37,7 @@ jobs:
           | sh -s -- -b $(go env GOPATH)/bin v2.0.0
 
       - name: Go mod download
-        run: go mod download
+        run: go mod download ...
 
       - name: Lint
         run: golangci-lint run
