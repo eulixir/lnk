@@ -112,8 +112,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "301": {
-                        "description": "Moved Permanently",
+                    "308": {
+                        "description": "Permanent Redirect",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -124,10 +124,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {

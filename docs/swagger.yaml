@@ -44,8 +44,8 @@ paths:
       produces:
       - application/json
       responses:
-        "301":
-          description: Moved Permanently
+        "308":
+          description: Permanent Redirect
           schema:
             additionalProperties:
               type: string
@@ -53,9 +53,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:

@@ -75,7 +75,6 @@ func StartDockerContainer(cfg DockerContainerConfig) (teardownFn func(), err err
 
 	dbPort = dockerResource.GetPort("9042/tcp")
 
-	fmt.Println("Waiting for Cassandra to be ready...")
 	startTime := time.Now()
 	maxWait := 180 * time.Second
 	backoff := 2 * time.Second
@@ -87,7 +86,6 @@ func StartDockerContainer(cfg DockerContainerConfig) (teardownFn func(), err err
 
 		err = pingCassandraFn(dbPort)()
 		if err == nil {
-			fmt.Printf("Cassandra is ready after %v\n", time.Since(startTime))
 			break
 		}
 
