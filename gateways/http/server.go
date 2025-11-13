@@ -7,8 +7,6 @@ import (
 	"time"
 
 	_ "lnk/docs"
-	"lnk/gateways/http/handlers"
-	"lnk/gateways/http/middleware"
 
 	"go.uber.org/zap"
 
@@ -25,34 +23,21 @@ import (
 // @schemes   http https
 
 type Server struct {
-	router   *gin.Engine
-	logger   *zap.Logger
-	port     string
-	handlers *handlers.Handlers
-	srv      *http.Server
+	logger *zap.Logger
+	port   string
+	srv    *http.Server
+	router *gin.Engine
 }
 
-func NewServer(logger *zap.Logger, port string, ginMode string) *Server {
-	gin.SetMode(ginMode)
-
-	router := gin.New()
-	router.Use(middleware.Recovery(logger))
-	router.Use(middleware.RequestLogger(logger))
-	router.Use(middleware.CORS())
-
-	httpHandlers := handlers.NewHttpHandlers(router, logger, port)
-
+func NewServer(logger *zap.Logger, port string, router *gin.Engine) *Server {
 	return &Server{
-		router:   router,
-		logger:   logger,
-		port:     port,
-		handlers: httpHandlers,
+		logger: logger,
+		port:   port,
+		router: router,
 	}
 }
 
 func (s *Server) Start() error {
-	s.handlers.SetupHandlers()
-
 	addr := fmt.Sprintf(":%s", s.port)
 	s.logger.Info("Starting HTTP server", zap.String("address", addr))
 

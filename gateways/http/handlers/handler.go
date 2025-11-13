@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 
+	"lnk/domain/entities/usecases"
 	"lnk/gateways/http/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -16,17 +17,27 @@ type Handlers struct {
 	logger      *zap.Logger
 	env         string
 	URLsHandler *URLsHandler
+	useCase     *usecases.UseCase
 }
 
-func NewHttpHandlers(router *gin.Engine, logger *zap.Logger, env string) *Handlers {
+type HttpHandlers struct {
+	Router  *gin.Engine
+	Logger  *zap.Logger
+	Env     string
+	UseCase *usecases.UseCase
+}
+
+func NewHttpHandlers(httpHandlers *HttpHandlers) *Handlers {
 	h := &Handlers{
-		router:      router,
-		logger:      logger,
-		env:         env,
-		URLsHandler: NewURLsHandler(logger),
+		router:      httpHandlers.Router,
+		logger:      httpHandlers.Logger,
+		env:         httpHandlers.Env,
+		URLsHandler: NewURLsHandler(httpHandlers.Logger),
+		useCase:     httpHandlers.UseCase,
 	}
 
 	h.setupMiddleware()
+	h.setupHandlers()
 
 	return h
 }
@@ -39,7 +50,7 @@ func (h *Handlers) setupMiddleware() {
 	h.router.Use(middleware.CORS())
 }
 
-func (h *Handlers) SetupHandlers() {
+func (h *Handlers) setupHandlers() {
 	if h.env == "development" {
 		h.router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	}

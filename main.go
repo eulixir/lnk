@@ -8,12 +8,17 @@ import (
 	"syscall"
 	"time"
 
+	"lnk/domain/entities/usecases"
 	"lnk/extensions/config"
 	"lnk/extensions/logger"
 	"lnk/extensions/redis"
 	"lnk/gateways/gocql"
+	"lnk/gateways/gocql/repositories"
 	httpServer "lnk/gateways/http"
+	"lnk/gateways/http/handlers"
+	"lnk/gateways/http/middleware"
 
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
@@ -45,7 +50,20 @@ func main() {
 	}
 	defer redisClient.Close()
 
-	server := httpServer.NewServer(logger, cfg.App.Port, cfg.App.GinMode)
+	repository := repositories.NewRepository(logger, session)
+	useCase := usecases.NewUseCase(logger, repository)
+
+	router := setupGinEngine(logger, cfg)
+
+	httpHandlers := handlers.NewHttpHandlers(&handlers.HttpHandlers{
+		Router:  router,
+		Logger:  logger,
+		Env:     cfg.App.ENV,
+		UseCase: useCase,
+	})
+	_ = httpHandlers // handlers are registered to router during initialization
+
+	server := httpServer.NewServer(logger, cfg.App.Port, router)
 	if err := server.Start(); err != nil {
 		logger.Fatal("Failed to start HTTP server", zap.Error(err))
 	}
@@ -64,4 +82,14 @@ func main() {
 	}
 
 	logger.Info("Application stopped")
+}
+
+func setupGinEngine(logger *zap.Logger, cfg *config.Config) *gin.Engine {
+	gin.SetMode(cfg.App.GinMode)
+	router := gin.New()
+	router.Use(middleware.Recovery(logger))
+	router.Use(middleware.RequestLogger(logger))
+	router.Use(middleware.CORS())
+
+	return router
 }
