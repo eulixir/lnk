@@ -3,6 +3,7 @@ version: 2
 run:
   tests: true
 output:
+  format: text
   formats:
     text:
       path: stdout
