@@ -2,15 +2,15 @@ package usecases_test
 
 import (
 	"context"
-	"lnk/domain/entities/usecases"
-	"lnk/extensions/gocqltesting"
-	"lnk/extensions/redis/mocks"
-	"lnk/gateways/gocql/repositories"
 	"testing"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
+	"lnk/domain/entities/usecases"
+	"lnk/extensions/gocqltesting"
+	"lnk/extensions/redis/mocks"
+	"lnk/gateways/gocql/repositories"
 )
 
 func Test_UseCase_GetLongURL(t *testing.T) {

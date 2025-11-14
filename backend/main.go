@@ -8,6 +8,9 @@ import (
 	"syscall"
 	"time"
 
+	gocql "github.com/apache/cassandra-gocql-driver/v2"
+	redis "github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 	"lnk/domain/entities/usecases"
 	"lnk/extensions/config"
 	"lnk/extensions/logger"
@@ -16,11 +19,6 @@ import (
 	"lnk/gateways/gocql/repositories"
 	httpServer "lnk/gateways/http"
 	"lnk/gateways/http/handlers"
-
-	redis "github.com/redis/go-redis/v9"
-
-	gocql "github.com/apache/cassandra-gocql-driver/v2"
-	"go.uber.org/zap"
 )
 
 func main() {

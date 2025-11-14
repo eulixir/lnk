@@ -18,8 +18,14 @@ generate:
 test:
 	@go test -timeout 30s -run ./...
 	
+.PHONY: coverage
 coverage:
 	@go test ./... -coverprofile=coverage.out
-	
+		
+.PHONY: lint
 lint:
 	@golangci-lint run ./...
+	
+.PHONY: fmt
+format:
+	@gofmt -w .

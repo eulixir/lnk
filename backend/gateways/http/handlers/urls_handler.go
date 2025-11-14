@@ -4,10 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"lnk/domain/entities/usecases"
-
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"lnk/domain/entities/usecases"
 )
 
 type CreateURLRequest struct {

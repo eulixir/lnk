@@ -11,13 +11,12 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/cassandra"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"go.uber.org/zap"
-
 	"lnk/gateways/gocql/migrations"
 )
 
 const (
-	connectTimeout = 30 * time.Second
-	timeout        = 10 * time.Second
+	connectTimeout  = 30 * time.Second
+	timeout         = 10 * time.Second
 	shutdownTimeout = 5 * time.Second
 )
 

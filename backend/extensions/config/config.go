@@ -5,7 +5,6 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
-
 	"lnk/extensions/logger"
 	"lnk/extensions/redis"
 	"lnk/gateways/gocql"

@@ -1,11 +1,12 @@
 package usecases_test
 
 import (
-	gocqltesting "lnk/extensions/gocqltesting"
-	"lnk/gateways/gocql/migrations"
 	"log"
 	"os"
 	"testing"
+
+	gocqltesting "lnk/extensions/gocqltesting"
+	"lnk/gateways/gocql/migrations"
 )
 
 func TestMain(m *testing.M) {

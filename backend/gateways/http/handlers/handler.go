@@ -3,12 +3,11 @@ package handlers
 import (
 	"net/http"
 
-	"lnk/domain/entities/usecases"
-
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
+	"lnk/domain/entities/usecases"
 )
 
 type Handlers struct {

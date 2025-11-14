@@ -1,12 +1,11 @@
 package http
 
 import (
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	_ "lnk/docs"
 	"lnk/gateways/http/handlers"
 	"lnk/gateways/http/middleware"
-
-	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 type RouterConfig struct {
@@ -29,4 +28,3 @@ func NewRouter(cfg RouterConfig) *gin.Engine {
 
 	return router
 }
-

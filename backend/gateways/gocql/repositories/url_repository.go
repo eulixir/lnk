@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/gocql/gocql"
-
 	"lnk/domain/entities"
 )
 
