@@ -22,9 +22,19 @@ const (
 	_defaultGocqlDockerVersion = "latest"
 	_templateKeyspace          = "template_keyspace"
 	retryIntervalMs            = 500
+	maxWait                    = 180 * time.Second
+	initialBackoff             = 2 * time.Second
+	maxBackoff                 = 10 * time.Second
+	postReadyDelay             = 3 * time.Second
+	cassandraPort              = 9042
+	pingConnectTimeout         = 5 * time.Second
+	pingTimeout                = 3 * time.Second
+	dockerConnectTimeout       = 30 * time.Second
+	dockerTimeout              = 10 * time.Second
 )
 
 var (
+	//nolint:gochecknoglobals // These are intentionally global for test infrastructure coordination
 	dbPort               string
 	setupMutex           sync.Mutex
 	containerInitialized bool
@@ -53,15 +63,33 @@ func StartDockerContainer(cfg DockerContainerConfig) (teardownFn func(), err err
 		return func() {}, nil
 	}
 
-	dockerPool, err := dockertest.NewPool("")
+	_, dockerResource, err := initializeDockerPool(cfg)
 	if err != nil {
-		return nil, fmt.Errorf(`could not connect to docker: %w`, err)
+		return nil, err
 	}
 
-	dockerPool.MaxWait = 180 * time.Second
+	if err := waitForCassandra(); err != nil {
+		return nil, err
+	}
+
+	if err := initializeSession(cfg); err != nil {
+		return nil, err
+	}
+
+	teardownFn = createTeardownFn(cfg, dockerResource)
+	return teardownFn, nil
+}
+
+func initializeDockerPool(cfg DockerContainerConfig) (*dockertest.Pool, *dockertest.Resource, error) {
+	dockerPool, err := dockertest.NewPool("")
+	if err != nil {
+		return nil, nil, fmt.Errorf(`could not connect to docker: %w`, err)
+	}
+
+	dockerPool.MaxWait = maxWait
 
 	if err = dockerPool.Client.Ping(); err != nil {
-		return nil, fmt.Errorf(`could not connect to docker: %w`, err)
+		return nil, nil, fmt.Errorf(`could not connect to docker: %w`, err)
 	}
 
 	if cfg.Version == "" {
@@ -70,37 +98,42 @@ func StartDockerContainer(cfg DockerContainerConfig) (teardownFn func(), err err
 
 	dockerResource, err := getDockerGocqlResource(dockerPool, cfg)
 	if err != nil {
-		return nil, fmt.Errorf(`failed to initialize gocql docker resource: %w`, err)
+		return nil, nil, fmt.Errorf(`failed to initialize gocql docker resource: %w`, err)
 	}
 
 	dbPort = dockerResource.GetPort("9042/tcp")
+	return dockerPool, dockerResource, nil
+}
 
+func waitForCassandra() error {
 	startTime := time.Now()
-	maxWait := 180 * time.Second
-	backoff := 2 * time.Second
+	backoff := initialBackoff
 
 	for {
 		if time.Since(startTime) > maxWait {
-			return nil, fmt.Errorf("cassandra not ready after %v: timeout exceeded", maxWait)
+			return fmt.Errorf("cassandra not ready after %v: timeout exceeded", maxWait)
 		}
 
-		err = pingCassandraFn(dbPort)()
+		err := pingCassandraFn(dbPort)()
 		if err == nil {
 			break
 		}
 
-		fmt.Printf("Cassandra not ready yet (attempt after %v): %v\n", time.Since(startTime), err)
 		time.Sleep(backoff)
-		if backoff < 10*time.Second {
+		if backoff < maxBackoff {
 			backoff *= 2
 		}
 	}
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(postReadyDelay)
+	return nil
+}
 
+func initializeSession(cfg DockerContainerConfig) error {
+	var err error
 	concurrentSession, err = newDB(getCassandraConnString(dbPort, "master"))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create session: %w", err)
+		return fmt.Errorf("failed to create session: %w", err)
 	}
 
 	containerInitialized = true
@@ -108,24 +141,26 @@ func StartDockerContainer(cfg DockerContainerConfig) (teardownFn func(), err err
 	if !templateReady {
 		if err := setupTemplateDatabase(concurrentSession, cfg.Migrations.FS); err != nil {
 			concurrentSession.Close()
-			return nil, err
+			return err
 		}
 		templateReady = true
 	}
 
-	teardownFn = func() {
+	return nil
+}
+
+func createTeardownFn(cfg DockerContainerConfig, dockerResource *dockertest.Resource) func() {
+	return func() {
 		if !cfg.ReuseContainer {
 			if concurrentSession != nil {
 				concurrentSession.Close()
 				concurrentSession = nil
 			}
-			dockerResource.Close()
+			_ = dockerResource.Close()
 			containerInitialized = false
 			templateReady = false
 		}
 	}
-
-	return teardownFn, nil
 }
 
 // setupTemplateDatabase creates a template keyspace and runs migrations on it once.
@@ -143,7 +178,7 @@ func setupTemplateDatabase(conn *cassandra.Session, migrationsFs fs.FS) error {
 		return nil
 	}
 
-	fmt.Println("Creating template keyspace and running migrations")
+	// Creating template keyspace and running migrations
 
 	createQuery := fmt.Sprintf(
 		"CREATE KEYSPACE %s WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}",
@@ -209,15 +244,15 @@ func getDockerGocqlResource(dockerPool *dockertest.Pool, cfg DockerContainerConf
 // pingCassandraFn returns a function that tests if Cassandra is ready by attempting a connection and query.
 func pingCassandraFn(port string) func() error {
 	return func() error {
-		portInt := 9042
+		portInt := cassandraPort
 		if port != "" {
-			fmt.Sscanf(port, "%d", &portInt)
+			_, _ = fmt.Sscanf(port, "%d", &portInt)
 		}
 
 		cluster := cassandra.NewCluster("localhost")
 		cluster.Port = portInt
-		cluster.ConnectTimeout = 5 * time.Second
-		cluster.Timeout = 3 * time.Second
+		cluster.ConnectTimeout = pingConnectTimeout
+		cluster.Timeout = pingTimeout
 		cluster.Consistency = cassandra.One
 		cluster.DisableInitialHostLookup = true
 		cluster.NumConns = 1
@@ -244,15 +279,15 @@ func getCassandraConnString(port, keyspace string) string {
 
 // newDB creates a new Cassandra session using the dbPort package variable.
 func newDB(_ string) (*cassandra.Session, error) {
-	port := 9042
+	port := cassandraPort
 	if dbPort != "" {
-		fmt.Sscanf(dbPort, "%d", &port)
+		_, _ = fmt.Sscanf(dbPort, "%d", &port)
 	}
 
 	cluster := cassandra.NewCluster("localhost")
 	cluster.Port = port
-	cluster.ConnectTimeout = 30 * time.Second
-	cluster.Timeout = 10 * time.Second
+	cluster.ConnectTimeout = dockerConnectTimeout
+	cluster.Timeout = dockerTimeout
 	cluster.Consistency = cassandra.Quorum
 
 	session, err := cluster.CreateSession()
@@ -266,7 +301,7 @@ func newDB(_ string) (*cassandra.Session, error) {
 func runMigrations(connectionString string, migrationsFs fs.FS) error {
 	sourceDriver, err := migrationHTTPS.New(http.FS(migrationsFs), ".")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create migration source driver: %w", err)
 	}
 
 	m, err := migrate.NewWithSourceInstance("httpfs", sourceDriver, connectionString)
@@ -275,7 +310,7 @@ func runMigrations(connectionString string, migrationsFs fs.FS) error {
 	}
 
 	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
-		return err
+		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	return nil

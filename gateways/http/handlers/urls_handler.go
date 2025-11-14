@@ -57,7 +57,7 @@ func (h *URLsHandler) CreateURL(c *gin.Context) {
 		return
 	}
 
-	shortURL, err := h.useCase.CreateShortURL(req.URL)
+	shortURL, err := h.useCase.CreateShortURL(c.Request.Context(), req.URL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		return
@@ -91,7 +91,6 @@ func (h *URLsHandler) GetURL(c *gin.Context) {
 
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
 		return
-
 	}
 
 	c.JSON(http.StatusPermanentRedirect, gin.H{"url": longURL})

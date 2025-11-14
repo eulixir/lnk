@@ -13,7 +13,7 @@ func Base62Decode(shortURL string, salt string) int64 {
 		if index == -1 {
 			return 0
 		}
-		decoded = decoded*62 + int64(index)
+		decoded = decoded*base62 + int64(index)
 	}
 	return decoded
 }

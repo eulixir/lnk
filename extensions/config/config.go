@@ -1,12 +1,14 @@
 package config
 
 import (
-	"lnk/extensions/logger"
-	"lnk/extensions/redis"
-	"lnk/gateways/gocql"
+	"fmt"
 
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+
+	"lnk/extensions/logger"
+	"lnk/extensions/redis"
+	"lnk/gateways/gocql"
 )
 
 type Config struct {
@@ -26,14 +28,14 @@ type App struct {
 func LoadConfig() (*Config, error) {
 	err := godotenv.Load()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to load .env file: %w", err)
 	}
 	config := &Config{}
 	if err := envconfig.Process("", config); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to process app config: %w", err)
 	}
 	if err := envconfig.Process("", &config.Gocql); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to process gocql config: %w", err)
 	}
 	return config, nil
 }

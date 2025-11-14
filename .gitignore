@@ -20,9 +20,6 @@ go.work
 go.work.sum
 
 # Dependency directories (remove the comment below if you use Go modules)
-/go.sum
-/go.mod
-
 # IDE/editor specific files
 .vscode/
 .idea/

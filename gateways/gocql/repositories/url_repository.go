@@ -1,21 +1,23 @@
 package repositories
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"lnk/domain/entities"
 	"time"
 
 	"github.com/gocql/gocql"
+
+	"lnk/domain/entities"
 )
 
-func (r *Repository) CreateURL(url *entities.URL) error {
+func (r *Repository) CreateURL(ctx context.Context, url *entities.URL) error {
 	url.CreatedAt = time.Now().UTC()
 
 	err := r.session.Query(
 		"INSERT INTO urls (short_code, long_url, created_at) VALUES (?, ?, ?)",
 		url.ShortCode, url.LongURL, url.CreatedAt,
-	).ExecContext(r.ctx)
+	).ExecContext(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create URL: %w", err)
 	}

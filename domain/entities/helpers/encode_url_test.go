@@ -1,7 +1,9 @@
-package helpers
+package helpers_test
 
 import (
 	"testing"
+
+	"lnk/domain/entities/helpers"
 )
 
 func Test_Helper_Base62Encode(t *testing.T) {
@@ -24,7 +26,7 @@ func Test_Helper_Base62Encode(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := Base62Encode(test.id, salt)
+		got := helpers.Base62Encode(test.id, salt)
 		if got != test.want {
 			t.Errorf("Base62Encode(%d, %s) = %s, want %s", test.id, salt, got, test.want)
 		}

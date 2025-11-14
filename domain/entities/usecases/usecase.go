@@ -1,7 +1,6 @@
 package usecases
 
 import (
-	"context"
 	"errors"
 	"lnk/extensions/redis"
 	"lnk/gateways/gocql/repositories"
@@ -9,11 +8,9 @@ import (
 	"go.uber.org/zap"
 )
 
-// ErrURLNotFound is returned when a URL is not found
 var ErrURLNotFound = errors.New("URL not found")
 
 type UseCase struct {
-	ctx        context.Context
 	logger     *zap.Logger
 	repository *repositories.Repository
 	redis      redis.Redis
@@ -22,7 +19,6 @@ type UseCase struct {
 }
 
 type NewUseCaseParams struct {
-	Ctx        context.Context
 	Logger     *zap.Logger
 	Repository *repositories.Repository
 	Redis      redis.Redis
@@ -32,7 +28,6 @@ type NewUseCaseParams struct {
 
 func NewUseCase(params NewUseCaseParams) *UseCase {
 	return &UseCase{
-		ctx:        params.Ctx,
 		logger:     params.Logger,
 		repository: params.Repository,
 		redis:      params.Redis,

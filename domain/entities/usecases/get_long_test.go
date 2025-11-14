@@ -23,13 +23,12 @@ func Test_UseCase_GetLongURL(t *testing.T) {
 	ctx := context.Background()
 	logger := zap.NewNop()
 
-	repository := repositories.NewRepository(ctx, logger, session)
+	repository := repositories.NewRepository(logger, session)
 
 	mockRedis := mocks.NewMockRedis(t)
 	mockRedis.On("Incr", mock.Anything, mock.Anything).Return(int64(1), nil)
 
 	params := usecases.NewUseCaseParams{
-		Ctx:        ctx,
 		Logger:     logger,
 		Repository: repository,
 		Redis:      mockRedis,
@@ -39,7 +38,7 @@ func Test_UseCase_GetLongURL(t *testing.T) {
 
 	useCase := usecases.NewUseCase(params)
 
-	shortCode, err := useCase.CreateShortURL(url)
+	shortCode, err := useCase.CreateShortURL(ctx, url)
 	require.NoError(t, err)
 	require.NotEmpty(t, shortCode)
 
@@ -55,13 +54,11 @@ func Test_UseCase_GetLongURL_NotFound(t *testing.T) {
 	session, err := gocqltesting.NewDB(t, t.Name())
 	require.NoError(t, err)
 
-	ctx := context.Background()
 	logger := zap.NewNop()
 
-	repository := repositories.NewRepository(ctx, logger, session)
+	repository := repositories.NewRepository(logger, session)
 
 	params := usecases.NewUseCaseParams{
-		Ctx:        ctx,
 		Logger:     logger,
 		Repository: repository,
 	}
