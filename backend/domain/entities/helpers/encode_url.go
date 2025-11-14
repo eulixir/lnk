@@ -13,7 +13,9 @@ const (
 
 func Base62Encode(id int64, salt string) string {
 	alphabet := getShuffledAlphabet(salt)
+
 	var encoded string
+
 	num := id
 
 	if num == 0 {
@@ -24,11 +26,13 @@ func Base62Encode(id int64, salt string) string {
 			num /= base62
 		}
 	}
+
 	if len(encoded) < minEncodedLen {
 		encoded = strings.Repeat(string(alphabet[0]), minEncodedLen-len(encoded)) + encoded
 	} else if len(encoded) > minEncodedLen {
 		encoded = encoded[:minEncodedLen]
 	}
+
 	return encoded
 }
 
@@ -49,5 +53,6 @@ func getShuffledAlphabet(salt string) string {
 		j := int(hashBytes[i%len(hashBytes)]) % (i + 1)
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	}
+
 	return string(shuffled)
 }

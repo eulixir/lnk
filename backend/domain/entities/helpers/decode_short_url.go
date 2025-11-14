@@ -6,6 +6,7 @@ import (
 
 func Base62Decode(shortURL string, salt string) int64 {
 	alphabet := getShuffledAlphabet(salt)
+
 	var decoded int64
 
 	for _, char := range shortURL {
@@ -13,7 +14,9 @@ func Base62Decode(shortURL string, salt string) int64 {
 		if index == -1 {
 			return 0
 		}
+
 		decoded = decoded*base62 + int64(index)
 	}
+
 	return decoded
 }

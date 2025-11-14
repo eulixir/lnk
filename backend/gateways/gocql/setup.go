@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strconv"
 	"time"
 
 	gocql "github.com/apache/cassandra-gocql-driver/v2"
@@ -44,16 +45,19 @@ func SetupDatabase(config *Config, logger *zap.Logger) (*gocql.Session, error) {
 	}
 
 	cluster.Keyspace = config.Keyspace
+
 	sessionWithKeyspace, err := cluster.CreateSession()
 	if err != nil {
 		session.Close()
 		return nil, fmt.Errorf("failed to create session with keyspace: %w", err)
 	}
+
 	session.Close()
 	session = sessionWithKeyspace
 
 	if config.AutoMigrate {
-		if err := runMigrations(config, logger); err != nil {
+		err := runMigrations(config, logger)
+		if err != nil {
 			return nil, fmt.Errorf("failed to run migrations: %w", err)
 		}
 	}
@@ -70,13 +74,16 @@ func createSessionWithRetry(cluster *gocql.ClusterConfig) (*gocql.Session, error
 	)
 
 	var lastErr error
+
 	maxAttemptsVar := maxAttempts
 	for range maxAttemptsVar {
 		session, err := cluster.CreateSession()
 		if err == nil {
 			return session, nil
 		}
+
 		lastErr = err
+
 		time.Sleep(backoff)
 	}
 
@@ -90,7 +97,7 @@ func runMigrations(config *Config, logger *zap.Logger) error {
 		return fmt.Errorf("failed to load embedded migrations: %w", err)
 	}
 
-	hostPort := net.JoinHostPort(config.Host, fmt.Sprintf("%d", config.Port))
+	hostPort := net.JoinHostPort(config.Host, strconv.Itoa(config.Port))
 	migrationURL := fmt.Sprintf("cassandra://%s/%s?x-multi-statement=true", hostPort, config.Keyspace)
 
 	m, err := migrate.NewWithSourceInstance("iofs", sourceDriver, migrationURL)
@@ -100,6 +107,7 @@ func runMigrations(config *Config, logger *zap.Logger) error {
 	}
 
 	logger.Info("Running migrations")
+
 	defer func() {
 		_, err := m.Close()
 		if err != nil {
@@ -112,7 +120,9 @@ func runMigrations(config *Config, logger *zap.Logger) error {
 			logger.Info("No migration changes to apply")
 			return nil
 		}
+
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
+
 	return nil
 }

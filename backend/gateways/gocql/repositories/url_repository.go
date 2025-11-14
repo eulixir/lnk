@@ -26,6 +26,7 @@ func (r *Repository) CreateURL(ctx context.Context, url *entities.URL) error {
 
 func (r *Repository) GetURLByShortCode(shortCode string) (*entities.URL, error) {
 	var url entities.URL
+
 	err := r.session.Query(
 		"SELECT short_code, long_url, created_at FROM urls WHERE short_code = ?",
 		shortCode,
@@ -34,7 +35,9 @@ func (r *Repository) GetURLByShortCode(shortCode string) (*entities.URL, error) 
 		if errors.Is(err, gocql.ErrNotFound) {
 			return nil, gocql.ErrNotFound
 		}
+
 		return nil, fmt.Errorf("failed to get URL by short code: %w", err)
 	}
+
 	return &url, nil
 }

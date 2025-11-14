@@ -24,8 +24,9 @@ coverage:
 		
 .PHONY: lint
 lint:
-	@golangci-lint run ./...
+	@golangci-lint run ./... --fix
 	
 .PHONY: fmt
 format:
 	@gofmt -w .
+	@gofumpt -w .

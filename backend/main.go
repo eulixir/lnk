@@ -31,8 +31,10 @@ func main() {
 	defer session.Close()
 
 	redisClient := setupRedis(ctx, cfg, logger)
+
 	defer func() {
-		if err := redisClient.Close(); err != nil {
+		err := redisClient.Close()
+		if err != nil {
 			logger.Error("Failed to close Redis client", zap.Error(err))
 		}
 	}()
@@ -57,6 +59,7 @@ func setupConfigAndLogger() (*config.Config, *zap.Logger) {
 	}
 
 	logger.Info("Starting application")
+
 	return cfg, logger
 }
 
@@ -65,6 +68,7 @@ func setupDatabase(cfg *config.Config, logger *zap.Logger) *gocql.Session {
 	if err != nil {
 		logger.Fatal("Failed to setup database", zap.Error(err))
 	}
+
 	return session
 }
 
@@ -73,6 +77,7 @@ func setupRedis(ctx context.Context, cfg *config.Config, logger *zap.Logger) *re
 	if err != nil {
 		logger.Fatal("Failed to setup Redis", zap.Error(err))
 	}
+
 	return redisClient
 }
 
@@ -107,7 +112,8 @@ func createAndStartServer(cfg *config.Config, logger *zap.Logger, useCase *useca
 	})
 
 	server := httpServer.NewServer(logger, cfg.App.Port, router)
-	if err := server.Start(); err != nil {
+	err := server.Start()
+	if err != nil {
 		logger.Fatal("Failed to start HTTP server", zap.Error(err))
 	}
 
@@ -122,10 +128,12 @@ func shutdownServer(ctx context.Context, logger *zap.Logger, server *httpServer.
 	logger.Info("Received shutdown signal")
 
 	const shutdownTimeout = 10 * time.Second
+
 	shutdownCtx, shutdownCancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer shutdownCancel()
 
-	if err := server.Shutdown(shutdownCtx); err != nil {
+	err := server.Shutdown(shutdownCtx)
+	if err != nil {
 		logger.Error("Error during server shutdown", zap.Error(err))
 	}
 

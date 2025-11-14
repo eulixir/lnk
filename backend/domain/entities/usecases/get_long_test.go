@@ -18,6 +18,7 @@ func Test_UseCase_GetLongURL(t *testing.T) {
 
 	session, err := gocqltesting.NewDB(t, t.Name())
 	require.NoError(t, err)
+
 	url := "https://www.google.com"
 
 	ctx := context.Background()

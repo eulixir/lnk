@@ -89,6 +89,7 @@ func (h *URLsHandler) GetURL(c *gin.Context) {
 		}
 
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+
 		return
 	}
 

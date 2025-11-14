@@ -10,9 +10,9 @@ import (
 
 type RouterConfig struct {
 	Logger   *zap.Logger
+	Handlers *handlers.Handlers
 	GinMode  string
 	Env      string
-	Handlers *handlers.Handlers
 }
 
 func NewRouter(cfg RouterConfig) *gin.Engine {

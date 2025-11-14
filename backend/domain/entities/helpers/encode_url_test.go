@@ -11,8 +11,8 @@ func Test_Helper_Base62Encode(t *testing.T) {
 
 	salt := "salt"
 	tests := []struct {
-		id   int64
 		want string
+		id   int64
 	}{
 		{1, "wwwE"},
 		{2, "wwwf"},

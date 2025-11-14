@@ -21,15 +21,15 @@ import (
 
 type Server struct {
 	logger *zap.Logger
-	port   string
 	srv    *http.Server
 	router *gin.Engine
+	port   string
 }
 
 type Config struct {
 	Logger *zap.Logger
-	Port   string
 	Router *gin.Engine
+	Port   string
 }
 
 func NewServer(logger *zap.Logger, port string, router *gin.Engine) *Server {
@@ -51,7 +51,8 @@ func (s *Server) Start() error {
 	}
 
 	go func() {
-		if err := s.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		err := s.srv.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
 			s.logger.Fatal("Failed to start server", zap.Error(err))
 		}
 	}()
@@ -67,13 +68,16 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	s.logger.Info("Shutting down HTTP server")
 
 	const shutdownTimeout = 5 * time.Second
+
 	shutdownCtx, cancel := context.WithTimeout(ctx, shutdownTimeout)
 	defer cancel()
 
-	if err := s.srv.Shutdown(shutdownCtx); err != nil {
+	err := s.srv.Shutdown(shutdownCtx)
+	if err != nil {
 		return fmt.Errorf("server shutdown failed: %w", err)
 	}
 
 	s.logger.Info("HTTP server stopped")
+
 	return nil
 }

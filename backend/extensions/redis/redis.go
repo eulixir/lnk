@@ -28,6 +28,7 @@ func (r *redisAdapter) Incr(ctx context.Context, key string) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to increment Redis key %s: %w", key, err)
 	}
+
 	return result, nil
 }
 

@@ -47,10 +47,10 @@ type Migrations struct {
 }
 
 type DockerContainerConfig struct {
-	ReuseContainer bool
+	Migrations     *Migrations
 	Version        string
 	ContainerName  string
-	Migrations     *Migrations
+	ReuseContainer bool
 }
 
 // StartDockerContainer starts a Cassandra Docker container and sets up a template keyspace with migrations.
@@ -77,6 +77,7 @@ func StartDockerContainer(cfg DockerContainerConfig) (teardownFn func(), err err
 	}
 
 	teardownFn = createTeardownFn(cfg, dockerResource)
+
 	return teardownFn, nil
 }
 
@@ -102,6 +103,7 @@ func initializeDockerPool(cfg DockerContainerConfig) (*dockertest.Pool, *dockert
 	}
 
 	dbPort = dockerResource.GetPort("9042/tcp")
+
 	return dockerPool, dockerResource, nil
 }
 
@@ -120,17 +122,20 @@ func waitForCassandra() error {
 		}
 
 		time.Sleep(backoff)
+
 		if backoff < maxBackoff {
 			backoff *= 2
 		}
 	}
 
 	time.Sleep(postReadyDelay)
+
 	return nil
 }
 
 func initializeSession(cfg DockerContainerConfig) error {
 	var err error
+
 	concurrentSession, err = newDB(getCassandraConnString(dbPort, "master"))
 	if err != nil {
 		return fmt.Errorf("failed to create session: %w", err)
@@ -139,10 +144,12 @@ func initializeSession(cfg DockerContainerConfig) error {
 	containerInitialized = true
 
 	if !templateReady {
-		if err := setupTemplateDatabase(concurrentSession, cfg.Migrations.FS); err != nil {
+		err := setupTemplateDatabase(concurrentSession, cfg.Migrations.FS)
+		if err != nil {
 			concurrentSession.Close()
 			return err
 		}
+
 		templateReady = true
 	}
 
@@ -156,6 +163,7 @@ func createTeardownFn(cfg DockerContainerConfig, dockerResource *dockertest.Reso
 				concurrentSession.Close()
 				concurrentSession = nil
 			}
+
 			_ = dockerResource.Close()
 			containerInitialized = false
 			templateReady = false
@@ -169,6 +177,7 @@ func setupTemplateDatabase(conn *cassandra.Session, migrationsFs fs.FS) error {
 	dbKeyspace := _templateKeyspace
 
 	var dbCount int
+
 	err := conn.Query("SELECT COUNT(*) FROM system_schema.keyspaces WHERE keyspace_name = ?", dbKeyspace).Scan(&dbCount)
 	if err != nil {
 		return fmt.Errorf("error checking template keyspace: %w", err)
@@ -208,11 +217,13 @@ func getDockerGocqlResource(dockerPool *dockertest.Pool, cfg DockerContainerConf
 		if cfg.ContainerName != "" {
 			containerName = cfg.ContainerName
 		}
+
 		container, _ := dockerPool.Client.InspectContainer(containerName)
 		if container != nil && container.State.Running {
 			resource := &dockertest.Resource{Container: container}
 			return resource, nil
 		}
+
 		if container != nil && !container.State.Running {
 			_ = dockerPool.RemoveContainerByName(containerName)
 		}
@@ -233,7 +244,6 @@ func getDockerGocqlResource(dockerPool *dockertest.Pool, cfg DockerContainerConf
 			Name: "no",
 		}
 	})
-
 	if err == nil {
 		return resource, nil
 	}
@@ -263,10 +273,12 @@ func pingCassandraFn(port string) func() error {
 		}
 
 		defer conn.Close()
+
 		err = conn.Query("SELECT now() FROM system.local").Exec()
 		if err != nil {
 			return fmt.Errorf("query failed: %w", err)
 		}
+
 		return nil
 	}
 }
@@ -294,6 +306,7 @@ func newDB(_ string) (*cassandra.Session, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
+
 	return session, nil
 }
 

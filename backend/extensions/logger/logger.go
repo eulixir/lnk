@@ -12,6 +12,7 @@ func NewLogger(config Config) (*zap.Logger, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to create development logger: %w", err)
 		}
+
 		return logger, nil
 	}
 
@@ -19,5 +20,6 @@ func NewLogger(config Config) (*zap.Logger, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create production logger: %w", err)
 	}
+
 	return logger, nil
 }

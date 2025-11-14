@@ -34,6 +34,7 @@ func NewDB(t *testing.T, dbName string) (*cassandra.Session, error) {
 	if dbName == "" {
 		return nil, errors.New("dbName cannot be an empty string")
 	}
+
 	dbName = nonAlphaRegex.ReplaceAllString(strings.ToLower(dbName), "_")
 
 	dropQuery := "DROP KEYSPACE IF EXISTS " + dbName
@@ -74,6 +75,7 @@ func NewDB(t *testing.T, dbName string) (*cassandra.Session, error) {
 
 	t.Cleanup(func() {
 		testSession.Close()
+
 		_ = session.Query("DROP KEYSPACE IF EXISTS " + dbName).Exec()
 	})
 
@@ -89,7 +91,8 @@ func copySchemaFromTemplate(session *cassandra.Session, targetKeyspace string) e
 	}
 
 	for _, tableName := range tableNames {
-		if err := copyTable(session, targetKeyspace, tableName); err != nil {
+		err := copyTable(session, targetKeyspace, tableName)
+		if err != nil {
 			return err
 		}
 	}
@@ -104,15 +107,20 @@ func getTableNames(session *cassandra.Session) ([]string, error) {
 		WHERE keyspace_name = ?
 	`, _templateKeyspace).Iter()
 
-	var tableNames []string
-	var tableName string
+	var (
+		tableNames []string
+		tableName  string
+	)
+
 	for iter.Scan(&tableName) {
 		if tableName == "schema_migrations" {
 			continue
 		}
+
 		tableNames = append(tableNames, tableName)
 	}
-	if err := iter.Close(); err != nil {
+	err := iter.Close()
+	if err != nil {
 		return nil, fmt.Errorf("failed to get tables: %w", err)
 	}
 
@@ -146,9 +154,11 @@ func getColumnInfos(session *cassandra.Session, tableName string) ([]columnInfo,
 		WHERE keyspace_name = ? AND table_name = ?
 	`, _templateKeyspace, tableName).Iter()
 
-	var columnInfos []columnInfo
-	var columnName, columnType, columnKind string
-	var position int
+	var (
+		columnInfos                        []columnInfo
+		columnName, columnType, columnKind string
+		position                           int
+	)
 
 	for colIter.Scan(&columnName, &columnType, &columnKind, &position) {
 		columnInfos = append(columnInfos, columnInfo{
@@ -158,7 +168,8 @@ func getColumnInfos(session *cassandra.Session, tableName string) ([]columnInfo,
 			position: position,
 		})
 	}
-	if err := colIter.Close(); err != nil {
+	err := colIter.Close()
+	if err != nil {
 		return nil, fmt.Errorf("failed to get columns for table %s: %w", tableName, err)
 	}
 
@@ -170,9 +181,11 @@ func getColumnInfos(session *cassandra.Session, tableName string) ([]columnInfo,
 }
 
 func createTable(session *cassandra.Session, targetKeyspace, tableName string, columnInfos []columnInfo) error {
-	var columns []string
-	var partitionKeys []string
-	var clusteringKeys []string
+	var (
+		columns        []string
+		partitionKeys  []string
+		clusteringKeys []string
+	)
 
 	for _, col := range columnInfos {
 		columns = append(columns, fmt.Sprintf("%s %s", col.name, col.typ))
@@ -186,7 +199,8 @@ func createTable(session *cassandra.Session, targetKeyspace, tableName string, c
 
 	createStmt := buildCreateTableStatement(targetKeyspace, tableName, columns, partitionKeys, clusteringKeys)
 
-	if err := session.Query(createStmt).Exec(); err != nil {
+	err := session.Query(createStmt).Exec()
+	if err != nil {
 		return fmt.Errorf("failed to create table %s: %w", tableName, err)
 	}
 
@@ -204,10 +218,12 @@ func buildCreateTableStatement(targetKeyspace, tableName string, columns, partit
 		} else {
 			createStmt += "(" + strings.Join(partitionKeys, ", ") + ")"
 		}
+
 		if len(clusteringKeys) > 0 {
 			createStmt += ", " + strings.Join(clusteringKeys, ", ")
 		}
 	}
+
 	createStmt += "))"
 
 	return createStmt
@@ -230,12 +246,14 @@ func copyIndexes(session *cassandra.Session, targetKeyspace, tableName string) e
 		if columnName != "" {
 			createIndexStmt := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s.%s (%s)",
 				indexName, targetKeyspace, tableName, columnName)
-			if err := session.Query(createIndexStmt).Exec(); err != nil {
+			err := session.Query(createIndexStmt).Exec()
+			if err != nil {
 				_ = err
 			}
 		}
 	}
-	if err := idxIter.Close(); err != nil {
+	err := idxIter.Close()
+	if err != nil {
 		_ = err
 	}
 
@@ -250,7 +268,9 @@ func extractColumnFromIndexName(indexName, tableName string) string {
 		suffix := strings.TrimPrefix(indexName, prefix)
 		suffix = strings.TrimSuffix(suffix, "_idx")
 		suffix = strings.TrimSuffix(suffix, "_index")
+
 		return suffix
 	}
+
 	return ""
 }

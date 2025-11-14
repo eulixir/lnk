@@ -12,9 +12,9 @@ import (
 
 type Config struct {
 	App    App
+	Logger logger.Config
 	Gocql  gocql.Config
 	Redis  redis.Config
-	Logger logger.Config
 }
 
 type App struct {
@@ -29,12 +29,15 @@ func LoadConfig() (*Config, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load .env file: %w", err)
 	}
+
 	config := &Config{}
 	if err := envconfig.Process("", config); err != nil {
 		return nil, fmt.Errorf("failed to process app config: %w", err)
 	}
+
 	if err := envconfig.Process("", &config.Gocql); err != nil {
 		return nil, fmt.Errorf("failed to process gocql config: %w", err)
 	}
+
 	return config, nil
 }
