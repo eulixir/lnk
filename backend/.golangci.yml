@@ -26,7 +26,6 @@ linters:
     - tagliatelle
     - varnamelen
     - wsl
-    - noinlineerr
     - gochecknoglobals
     - mnd
     - perfsprint
