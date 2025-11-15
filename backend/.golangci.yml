@@ -26,6 +26,7 @@ linters:
     - tagliatelle
     - varnamelen
     - wsl
+    - wsl_v5
     - noinlineerr
     - gochecknoglobals
     - mnd
@@ -79,15 +80,3 @@ issues:
     - linters:
         - staticcheck
       text: "ST1020:"
-formatters:
-  enable:
-    - gci
-    - gofmt
-    - gofumpt
-    - goimports
-  exclusions:
-    generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$

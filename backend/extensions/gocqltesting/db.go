@@ -269,13 +269,13 @@ func copyIndexes(session *cassandra.Session, targetKeyspace, tableName string) e
 // Pattern: table_column_idx -> column
 func extractColumnFromIndexName(indexName, tableName string) string {
 	prefix := tableName + "_"
-	if strings.HasPrefix(indexName, prefix) {
-		suffix := strings.TrimPrefix(indexName, prefix)
-		suffix = strings.TrimSuffix(suffix, "_idx")
-		suffix = strings.TrimSuffix(suffix, "_index")
-
-		return suffix
+	suffix, ok := strings.CutPrefix(indexName, prefix)
+	if !ok {
+		return ""
 	}
 
-	return ""
+	suffix = strings.TrimSuffix(suffix, "_idx")
+	suffix = strings.TrimSuffix(suffix, "_index")
+
+	return suffix
 }

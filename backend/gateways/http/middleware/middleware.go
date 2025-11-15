@@ -35,7 +35,7 @@ func RequestLogger(logger *zap.Logger) gin.HandlerFunc {
 }
 
 func Recovery(logger *zap.Logger) gin.HandlerFunc {
-	return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
+	return gin.CustomRecovery(func(c *gin.Context, recovered any) {
 		logger.Error("Panic recovered",
 			zap.Any("error", recovered),
 			zap.String("path", c.Request.URL.Path),
