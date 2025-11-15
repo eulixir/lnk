@@ -14,15 +14,15 @@ func Test_Helper_Base62Encode(t *testing.T) {
 		want string
 		id   int64
 	}{
-		{1, "wwwE"},
-		{2, "wwwf"},
-		{3, "www2"},
-		{4, "wwwQ"},
-		{5, "wwwS"},
-		{6, "wwwV"},
-		{7, "wwwa"},
-		{8, "wwwm"},
-		{9, "wwwD"},
+		{"wwwE", 1},
+		{"wwwf", 2},
+		{"www2", 3},
+		{"wwwQ", 4},
+		{"wwwS", 5},
+		{"wwwV", 6},
+		{"wwwa", 7},
+		{"wwwm", 8},
+		{"wwwD", 9},
 	}
 
 	for _, test := range tests {

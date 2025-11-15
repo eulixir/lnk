@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func Base62Decode(shortURL string, salt string) int64 {
+func Base62Decode(shortURL, salt string) int64 {
 	alphabet := getShuffledAlphabet(salt)
 
 	var decoded int64

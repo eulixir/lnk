@@ -34,12 +34,11 @@ const (
 )
 
 var (
-	//nolint:gochecknoglobals // These are intentionally global for test infrastructure coordination
-	dbPort               string
-	setupMutex           sync.Mutex
-	containerInitialized bool
-	concurrentSession    *cassandra.Session
-	templateReady        bool
+	dbPort               string             //nolint:gochecknoglobals
+	setupMutex           sync.Mutex         //nolint:gochecknoglobals
+	containerInitialized bool               //nolint:gochecknoglobals
+	concurrentSession    *cassandra.Session //nolint:gochecknoglobals
+	templateReady        bool               //nolint:gochecknoglobals
 )
 
 type Migrations struct {
@@ -193,8 +192,10 @@ func setupTemplateDatabase(conn *cassandra.Session, migrationsFs fs.FS) error {
 		"CREATE KEYSPACE %s WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}",
 		dbKeyspace,
 	)
-	if err := conn.Query(createQuery).Exec(); err != nil {
-		return fmt.Errorf("error creating template keyspace: %w", err)
+
+	execErr := conn.Query(createQuery).Exec()
+	if execErr != nil {
+		return fmt.Errorf("error creating template keyspace: %w", execErr)
 	}
 
 	time.Sleep(time.Millisecond * retryIntervalMs)

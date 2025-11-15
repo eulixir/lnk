@@ -10,6 +10,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	readHeaderTimeout = 5 * time.Second
+)
+
 // @title           LNK URL Shortener API
 // @version         1.0
 // @description     A URL shortener service API
@@ -47,7 +51,7 @@ func (s *Server) Start() error {
 	s.srv = &http.Server{
 		Addr:              addr,
 		Handler:           s.router,
-		ReadHeaderTimeout: 5 * time.Second,
+		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
 	go func() {

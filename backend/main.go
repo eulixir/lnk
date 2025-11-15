@@ -22,29 +22,29 @@ import (
 )
 
 func main() {
-	cfg, logger := setupConfigAndLogger()
+	cfg, appLogger := setupConfigAndLogger()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	session := setupDatabase(cfg, logger)
+	session := setupDatabase(cfg, appLogger)
 	defer session.Close()
 
-	redisClient := setupRedis(ctx, cfg, logger)
+	redisClient := setupRedis(ctx, cfg, appLogger)
 
 	defer func() {
 		err := redisClient.Close()
 		if err != nil {
-			logger.Error("Failed to close Redis client", zap.Error(err))
+			appLogger.Error("Failed to close Redis client", zap.Error(err))
 		}
 	}()
 
-	initializeCounter(ctx, redisClient, cfg, logger)
+	initializeCounter(ctx, redisClient, cfg, appLogger)
 
-	useCase := createUseCase(cfg, logger, session, redisClient)
-	server := createAndStartServer(cfg, logger, useCase)
+	useCase := createUseCase(cfg, appLogger, session, redisClient)
+	server := createAndStartServer(cfg, appLogger, useCase)
 
-	shutdownServer(ctx, logger, server)
+	shutdownServer(ctx, appLogger, server)
 }
 
 func setupConfigAndLogger() (*config.Config, *zap.Logger) {
@@ -53,47 +53,47 @@ func setupConfigAndLogger() (*config.Config, *zap.Logger) {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	logger, err := logger.NewLogger(cfg.Logger)
+	appLogger, err := logger.NewLogger(cfg.Logger)
 	if err != nil {
 		log.Fatalf("Failed to create logger: %v", err)
 	}
 
-	logger.Info("Starting application")
+	appLogger.Info("Starting application")
 
-	return cfg, logger
+	return cfg, appLogger
 }
 
-func setupDatabase(cfg *config.Config, logger *zap.Logger) *gocql.Session {
-	session, err := gocqlPackage.SetupDatabase(&cfg.Gocql, logger)
+func setupDatabase(cfg *config.Config, appLogger *zap.Logger) *gocql.Session {
+	session, err := gocqlPackage.SetupDatabase(&cfg.Gocql, appLogger)
 	if err != nil {
-		logger.Fatal("Failed to setup database", zap.Error(err))
+		appLogger.Fatal("Failed to setup database", zap.Error(err))
 	}
 
 	return session
 }
 
-func setupRedis(ctx context.Context, cfg *config.Config, logger *zap.Logger) *redis.Client {
-	redisClient, err := redisPackage.SetupRedis(ctx, &cfg.Redis, logger)
+func setupRedis(ctx context.Context, cfg *config.Config, appLogger *zap.Logger) *redis.Client {
+	redisClient, err := redisPackage.SetupRedis(ctx, &cfg.Redis, appLogger)
 	if err != nil {
-		logger.Fatal("Failed to setup Redis", zap.Error(err))
+		appLogger.Fatal("Failed to setup Redis", zap.Error(err))
 	}
 
 	return redisClient
 }
 
-func initializeCounter(ctx context.Context, redisClient *redis.Client, cfg *config.Config, logger *zap.Logger) {
-	setInitialCounter, err := redisPackage.SetInitialCounterValue(ctx, redisClient, &cfg.Redis, logger)
+func initializeCounter(ctx context.Context, redisClient *redis.Client, cfg *config.Config, appLogger *zap.Logger) {
+	setInitialCounter, err := redisPackage.SetInitialCounterValue(ctx, redisClient, &cfg.Redis, appLogger)
 	if err != nil && !setInitialCounter {
-		logger.Fatal("Failed to set initial counter", zap.Error(err))
+		appLogger.Fatal("Failed to set initial counter", zap.Error(err))
 	}
 }
 
-func createUseCase(cfg *config.Config, logger *zap.Logger, session *gocql.Session, redisClient *redis.Client) *usecases.UseCase {
-	repository := repositories.NewRepository(logger, session)
+func createUseCase(cfg *config.Config, appLogger *zap.Logger, session *gocql.Session, redisClient *redis.Client) *usecases.UseCase {
+	repository := repositories.NewRepository(appLogger, session)
 	redisAdapter := redisPackage.NewRedisAdapter(redisClient)
 
 	return usecases.NewUseCase(usecases.NewUseCaseParams{
-		Logger:     logger,
+		Logger:     appLogger,
 		Repository: repository,
 		Redis:      redisAdapter,
 		Salt:       cfg.App.Base62Salt,
@@ -101,31 +101,32 @@ func createUseCase(cfg *config.Config, logger *zap.Logger, session *gocql.Sessio
 	})
 }
 
-func createAndStartServer(cfg *config.Config, logger *zap.Logger, useCase *usecases.UseCase) *httpServer.Server {
-	httpHandlers := handlers.NewHandlers(logger, useCase)
+func createAndStartServer(cfg *config.Config, appLogger *zap.Logger, useCase *usecases.UseCase) *httpServer.Server {
+	httpHandlers := handlers.NewHandlers(appLogger, useCase)
 
 	router := httpServer.NewRouter(httpServer.RouterConfig{
-		Logger:   logger,
+		Logger:   appLogger,
 		GinMode:  cfg.App.GinMode,
 		Env:      cfg.App.ENV,
 		Handlers: httpHandlers,
 	})
 
-	server := httpServer.NewServer(logger, cfg.App.Port, router)
+	server := httpServer.NewServer(appLogger, cfg.App.Port, router)
+
 	err := server.Start()
 	if err != nil {
-		logger.Fatal("Failed to start HTTP server", zap.Error(err))
+		appLogger.Fatal("Failed to start HTTP server", zap.Error(err))
 	}
 
 	return server
 }
 
-func shutdownServer(ctx context.Context, logger *zap.Logger, server *httpServer.Server) {
+func shutdownServer(ctx context.Context, appLogger *zap.Logger, server *httpServer.Server) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	<-sigChan
-	logger.Info("Received shutdown signal")
+	appLogger.Info("Received shutdown signal")
 
 	const shutdownTimeout = 10 * time.Second
 
@@ -134,8 +135,8 @@ func shutdownServer(ctx context.Context, logger *zap.Logger, server *httpServer.
 
 	err := server.Shutdown(shutdownCtx)
 	if err != nil {
-		logger.Error("Error during server shutdown", zap.Error(err))
+		appLogger.Error("Error during server shutdown", zap.Error(err))
 	}
 
-	logger.Info("Application stopped")
+	appLogger.Info("Application stopped")
 }

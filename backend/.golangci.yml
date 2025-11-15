@@ -26,6 +26,10 @@ linters:
     - tagliatelle
     - varnamelen
     - wsl
+    - noinlineerr
+    - gochecknoglobals
+    - mnd
+    - perfsprint
   settings:
     gocritic:
       enabled-tags:
@@ -34,6 +38,8 @@ linters:
         - opinionated
         - performance
         - style
+      disabled-checks:
+        - whyNoLint # Require explanations for nolint directives
     govet:
       enable-all: true
     misspell:
@@ -41,6 +47,7 @@ linters:
     staticcheck:
       checks:
         - all
+        - -ST1000
   exclusions:
     generated: lax
     rules:
@@ -66,6 +73,12 @@ linters:
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
+  exclude-rules:
+    - linters:
+        - staticcheck
+    - linters:
+        - staticcheck
+      text: "ST1020:"
 formatters:
   enable:
     - gci

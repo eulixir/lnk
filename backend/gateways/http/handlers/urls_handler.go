@@ -39,6 +39,8 @@ func NewURLsHandler(logger *zap.Logger, useCase *usecases.UseCase) *URLsHandler 
 	}
 }
 
+// CreateURL creates a short URL from a long URL.
+//
 // @Summary      Create a short URL
 // @Description  Create a short URL from a long URL
 // @Tags         urls
@@ -68,6 +70,8 @@ func (h *URLsHandler) CreateURL(c *gin.Context) {
 	})
 }
 
+// GetURL retrieves the original URL from a short URL.
+//
 // @Summary      Get original URL by short URL
 // @Description  Get the original URL from a short URL
 // @Tags         urls

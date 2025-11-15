@@ -40,8 +40,10 @@ func SetupDatabase(config *Config, logger *zap.Logger) (*gocql.Session, error) {
 		"CREATE KEYSPACE IF NOT EXISTS %s WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}",
 		config.Keyspace,
 	)
-	if err := session.Query(createKeyspaceQuery).Exec(); err != nil {
-		logger.Warn("Failed to create keyspace (may already exist)", zap.Error(err))
+
+	execErr := session.Query(createKeyspaceQuery).Exec()
+	if execErr != nil {
+		logger.Warn("Failed to create keyspace (may already exist)", zap.Error(execErr))
 	}
 
 	cluster.Keyspace = config.Keyspace

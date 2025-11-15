@@ -17,7 +17,7 @@ const (
 	timeout        = 10 * time.Second
 )
 
-var nonAlphaRegex = regexp.MustCompile(`[\W]`)
+var nonAlphaRegex = regexp.MustCompile(`\W`)
 
 // NewDB creates a new isolated test keyspace by copying the schema from the template keyspace.
 // This is much faster than running migrations for each test. The keyspace is automatically
@@ -119,6 +119,7 @@ func getTableNames(session *cassandra.Session) ([]string, error) {
 
 		tableNames = append(tableNames, tableName)
 	}
+
 	err := iter.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tables: %w", err)
@@ -168,6 +169,7 @@ func getColumnInfos(session *cassandra.Session, tableName string) ([]columnInfo,
 			position: position,
 		})
 	}
+
 	err := colIter.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get columns for table %s: %w", tableName, err)
@@ -181,8 +183,9 @@ func getColumnInfos(session *cassandra.Session, tableName string) ([]columnInfo,
 }
 
 func createTable(session *cassandra.Session, targetKeyspace, tableName string, columnInfos []columnInfo) error {
+	columns := make([]string, 0, len(columnInfos))
+
 	var (
-		columns        []string
 		partitionKeys  []string
 		clusteringKeys []string
 	)
@@ -246,12 +249,14 @@ func copyIndexes(session *cassandra.Session, targetKeyspace, tableName string) e
 		if columnName != "" {
 			createIndexStmt := fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s ON %s.%s (%s)",
 				indexName, targetKeyspace, tableName, columnName)
+
 			err := session.Query(createIndexStmt).Exec()
 			if err != nil {
 				_ = err
 			}
 		}
 	}
+
 	err := idxIter.Close()
 	if err != nil {
 		_ = err
