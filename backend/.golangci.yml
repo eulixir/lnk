@@ -1,0 +1,82 @@
+version: 2
+
+output:
+  formats:
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
+linters:
+  default: all
+  disable:
+    - depguard
+    - err113
+    - exhaustive
+    - exhaustruct
+    - godot
+    - godox
+    - gomoddirectives
+    - ireturn
+    - lll
+    - musttag
+    - nlreturn
+    - nonamedreturns
+    - revive
+    - tagalign
+    - tagliatelle
+    - varnamelen
+    - wsl
+    - wsl_v5
+    - noinlineerr
+    - gochecknoglobals
+    - mnd
+    - perfsprint
+  settings:
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+      disabled-checks:
+        - whyNoLint # Require explanations for nolint directives
+    govet:
+      enable-all: true
+    misspell:
+      locale: US
+    staticcheck:
+      checks:
+        - all
+        - -ST1000
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - errcheck
+          - gosec
+          - unparam
+        path: _test\.go
+      - linters:
+          - errcheck
+        path: _test\.go
+        text: Error return value of .((t|b|tb|f|g|gb)\.(Fatal|Fatalf|Skip|Skipf)|.*\.Errorf?|.*\.Fail(Now)?). is not checked
+      - linters:
+          - all
+        path: mocks/
+      - linters:
+          - all
+        path: docs/
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-rules:
+    - linters:
+        - staticcheck
+    - linters:
+        - staticcheck
+      text: "ST1020:"
