@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { postShorten } from "@/api/lnk";
 import { UrlDialog } from "./url-dialog";
 import { UrlInput } from "./url-input";
 
@@ -8,8 +9,11 @@ export function UrlShortener() {
   const [url, setUrl] = useState("");
 
   const requestShorten = async () => {
-    // const response = await shortenUrl(url);
-    console.log("banana");
+    const response = await postShorten({ url });
+    console.log("response", response);
+    if (response.status === 200) {
+      console.log("response.data", response.data);
+    }
   };
 
   return (
