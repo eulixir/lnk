@@ -50,4 +50,3 @@ export const customInstance = async <T>(
     headers: response.headers,
   };
 };
-

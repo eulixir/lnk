@@ -31,7 +31,7 @@ The project follows a clean architecture pattern with clear separation of concer
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone git@github.com:eulixir/lnk.git
 cd lnk
 ```
 
@@ -48,6 +48,12 @@ docker-compose up -d
 This will start:
 - Redis on port `6379`
 - Cassandra on port `9042`
+
+> **⚠️ Important**: The Cassandra setup can take a significant amount of time (30-60 seconds or more) to fully initialize and be ready to accept connections. Wait for Cassandra to be healthy before starting the backend application. You can check readiness with:
+> ```bash
+> docker exec lnk-cassandra nodetool status
+> ```
+> When Cassandra is ready, you should see the node status as `UN` (Up Normal).
 
 4. Create a `.env` file in the project root with the following configuration:
 
@@ -235,8 +241,121 @@ CREATE TABLE urls (
 
 This design ensures fast lookups when retrieving URLs by their short code.
 
+## Frontend
+
+The frontend is a modern Next.js application that provides a user-friendly interface for the URL shortener service.
+
+### Frontend Features
+
+- 🎨 **Modern UI**: Built with Next.js 16 and React 19
+- 🎯 **Type-Safe API Client**: Auto-generated TypeScript client from Swagger/OpenAPI
+- 🎨 **Beautiful Components**: Uses shadcn/ui component library
+- 📱 **Responsive Design**: Mobile-friendly interface
+- ⚡ **Fast Performance**: Optimized with React Compiler
+
+### Frontend Prerequisites
+
+- Node.js 18+ or Bun
+- Backend API running (see Backend section)
+
+### Frontend Installation
+
+1. Navigate to the frontend directory:
+```bash
+cd frontend
+```
+
+2. Install dependencies:
+```bash
+# Using npm
+npm install
+
+# Or using Bun
+bun install
+```
+
+3. Generate API client from Swagger documentation:
+```bash
+npm run generate:api
+# Or
+bun run generate:api
+```
+
+**Note**: Make sure the backend is running and Swagger documentation is available at `http://localhost:8080/swagger/doc.json` before generating the API client.
+
+### Running the Frontend
+
+#### Development Mode
+
+```bash
+npm run dev
+# Or
+bun run dev
+```
+
+The frontend will start on `http://localhost:3000` (default Next.js port).
+
+#### Production Build
+
+```bash
+npm run build
+npm run start
+# Or
+bun run build
+bun run start
+```
+
+### Frontend Scripts
+
+- `npm run dev` / `bun run dev`: Start development server
+- `npm run build` / `bun run build`: Build for production
+- `npm run start` / `bun run start`: Start production server
+- `npm run lint` / `bun run lint`: Run linter (Biome)
+- `npm run lint:fix` / `bun run lint:fix`: Fix linting issues
+- `npm run format` / `bun run format`: Format code
+- `npm run generate:api` / `bun run generate:api`: Generate API client from Swagger
+
+### Frontend Technologies
+
+- **Next.js 16**: React framework with App Router
+- **React 19**: UI library
+- **TypeScript**: Type safety
+- **Tailwind CSS**: Utility-first CSS framework
+- **shadcn/ui**: High-quality component library
+- **Orval**: OpenAPI client generator
+- **Biome**: Fast linter and formatter
+- **React Hook Form**: Form management
+- **Sonner**: Toast notifications
+- **Lucide React**: Icon library
+
+### Frontend Project Structure
+
+```
+frontend/
+├── src/
+│   ├── app/              # Next.js App Router pages
+│   │   ├── [shortUrl]/   # Dynamic route for URL redirection
+│   │   └── page.tsx      # Home page
+│   ├── api/              # API client and configuration
+│   │   ├── lnk.ts        # Auto-generated API client
+│   │   └── undici-instance.ts  # Custom fetch instance
+│   ├── components/       # React components
+│   │   ├── ui/           # shadcn/ui components
+│   │   ├── url-dialog.tsx
+│   │   ├── url-input.tsx
+│   │   └── url-shortener.tsx
+│   ├── hooks/            # Custom React hooks
+│   ├── lib/              # Utility functions
+│   └── types/            # TypeScript type definitions
+├── public/               # Static assets
+├── orval.config.ts       # API client generation config
+├── next.config.ts        # Next.js configuration
+└── package.json          # Dependencies and scripts
+```
+
 ## Technologies Used
 
+### Backend
 - **Go 1.24**: Programming language
 - **Gin**: HTTP web framework
 - **Cassandra (gocql)**: Database for URL storage
@@ -245,6 +364,14 @@ This design ensures fast lookups when retrieving URLs by their short code.
 - **Swagger/OpenAPI**: API documentation
 - **Docker Compose**: Local development environment
 - **Testify**: Testing framework
+
+### Frontend
+- **Next.js 16**: React framework
+- **React 19**: UI library
+- **TypeScript**: Type safety
+- **Tailwind CSS**: Styling
+- **shadcn/ui**: Component library
+- **Orval**: API client generator
 
 ## Configuration
 
