@@ -28,11 +28,13 @@ export function UrlDialog({
   onOpenChange,
 }: UrlDialogProps) {
   const [copied, setCopied] = useState(false);
+  const frontEndUrl = process.env.NEXT_PUBLIC_FRONT_URL;
+  const fullUrl = `${frontEndUrl}/${shortUrl}`;
 
   const handleCopy = async () => {
-    if (!shortUrl) return;
+    if (!fullUrl) return;
     try {
-      await navigator.clipboard.writeText(shortUrl);
+      await navigator.clipboard.writeText(fullUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
       toast.success("Copied to clipboard");
@@ -58,7 +60,7 @@ export function UrlDialog({
           <div className="flex items-center gap-2">
             <Input
               readOnly
-              value={shortUrl}
+              value={fullUrl}
               className="font-mono bg-gray-800 border-[#30b6db]/30 text-foreground"
             />
             <Button
