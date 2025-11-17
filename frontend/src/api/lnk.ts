@@ -5,7 +5,7 @@
  * A URL shortener service API
  * OpenAPI spec version: 1.0
  */
-import { customInstance } from './undici-instance';
+import { customInstance } from "./undici-instance";
 export interface HandlersCreateURLRequest {
   url: string;
 }
@@ -19,140 +19,127 @@ export interface HandlersErrorResponse {
   error?: string;
 }
 
-export type GetHealth200 = {[key: string]: string};
+export type GetHealth200 = { [key: string]: string };
 
-export type GetShortUrl308 = {[key: string]: string};
+export type GetShortUrl308 = { [key: string]: string };
 
-export type GetShortUrl500 = {[key: string]: string};
+export type GetShortUrl500 = { [key: string]: string };
 
 /**
  * Check if the API is running
  * @summary Health check endpoint
  */
 export type getHealthResponse200 = {
-  data: GetHealth200
-  status: 200
-}
-    
-export type getHealthResponseSuccess = (getHealthResponse200) & {
+  data: GetHealth200;
+  status: 200;
+};
+
+export type getHealthResponseSuccess = getHealthResponse200 & {
   headers: Headers;
 };
-;
 
-export type getHealthResponse = (getHealthResponseSuccess)
+export type getHealthResponse = getHealthResponseSuccess;
 
 export const getGetHealthUrl = () => {
+  return `/health`;
+};
 
-
-  
-
-  return `/health`
-}
-
-export const getHealth = async ( options?: RequestInit): Promise<getHealthResponse> => {
-  
-  return customInstance<getHealthResponse>(getGetHealthUrl(),
-  {      
+export const getHealth = async (
+  options?: RequestInit,
+): Promise<getHealthResponse> => {
+  return customInstance<getHealthResponse>(getGetHealthUrl(), {
     ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
+    method: "GET",
+  });
+};
 
 /**
  * Create a short URL from a long URL
  * @summary Create a short URL
  */
 export type postShortenResponse200 = {
-  data: HandlersCreateURLResponse
-  status: 200
-}
+  data: HandlersCreateURLResponse;
+  status: 200;
+};
 
 export type postShortenResponse400 = {
-  data: HandlersErrorResponse
-  status: 400
-}
+  data: HandlersErrorResponse;
+  status: 400;
+};
 
 export type postShortenResponse500 = {
-  data: HandlersErrorResponse
-  status: 500
-}
-    
-export type postShortenResponseSuccess = (postShortenResponse200) & {
+  data: HandlersErrorResponse;
+  status: 500;
+};
+
+export type postShortenResponseSuccess = postShortenResponse200 & {
   headers: Headers;
 };
-export type postShortenResponseError = (postShortenResponse400 | postShortenResponse500) & {
+export type postShortenResponseError = (
+  | postShortenResponse400
+  | postShortenResponse500
+) & {
   headers: Headers;
 };
 
-export type postShortenResponse = (postShortenResponseSuccess | postShortenResponseError)
+export type postShortenResponse =
+  | postShortenResponseSuccess
+  | postShortenResponseError;
 
 export const getPostShortenUrl = () => {
+  return `/shorten`;
+};
 
-
-  
-
-  return `/shorten`
-}
-
-export const postShorten = async (handlersCreateURLRequest: HandlersCreateURLRequest, options?: RequestInit): Promise<postShortenResponse> => {
-  
-  return customInstance<postShortenResponse>(getPostShortenUrl(),
-  {      
+export const postShorten = async (
+  handlersCreateURLRequest: HandlersCreateURLRequest,
+  options?: RequestInit,
+): Promise<postShortenResponse> => {
+  return customInstance<postShortenResponse>(getPostShortenUrl(), {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      handlersCreateURLRequest,)
-  }
-);}
-
-
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(handlersCreateURLRequest),
+  });
+};
 
 /**
  * Get the original URL from a short URL
  * @summary Get original URL by short URL
  */
 export type getShortUrlResponse308 = {
-  data: GetShortUrl308
-  status: 308
-}
+  data: GetShortUrl308;
+  status: 308;
+};
 
 export type getShortUrlResponse404 = {
-  data: HandlersErrorResponse
-  status: 404
-}
+  data: HandlersErrorResponse;
+  status: 404;
+};
 
 export type getShortUrlResponse500 = {
-  data: GetShortUrl500
-  status: 500
-}
-    
-;
-export type getShortUrlResponseError = (getShortUrlResponse308 | getShortUrlResponse404 | getShortUrlResponse500) & {
+  data: GetShortUrl500;
+  status: 500;
+};
+export type getShortUrlResponseError = (
+  | getShortUrlResponse308
+  | getShortUrlResponse404
+  | getShortUrlResponse500
+) & {
   headers: Headers;
 };
 
-export type getShortUrlResponse = (getShortUrlResponseError)
+export type getShortUrlResponse = getShortUrlResponseError;
 
-export const getGetShortUrlUrl = (shortUrl: string,) => {
+export const getGetShortUrlUrl = (shortUrl: string) => {
+  return `/${shortUrl}`;
+};
 
-
-  
-
-  return `/${shortUrl}`
-}
-
-export const getShortUrl = async (shortUrl: string, options?: RequestInit): Promise<getShortUrlResponse> => {
-  
-  return customInstance<getShortUrlResponse>(getGetShortUrlUrl(shortUrl),
-  {      
+export const getShortUrl = async (
+  shortUrl: string,
+  options?: RequestInit,
+): Promise<getShortUrlResponse> => {
+  return customInstance<getShortUrlResponse>(getGetShortUrlUrl(shortUrl), {
     ...options,
-    method: 'GET'
-    
-    
-  }
-);}
+    method: "GET",
+  });
+};

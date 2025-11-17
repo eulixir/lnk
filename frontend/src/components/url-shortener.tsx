@@ -1,10 +1,10 @@
 "use client";
 
+import { useState } from "react";
+import { toast } from "sonner";
 import { postShorten } from "@/api/lnk";
 import { UrlDialog } from "./url-dialog";
 import { UrlInput } from "./url-input";
-import { useState } from "react";
-import { toast } from "sonner";
 
 export function UrlShortener() {
   const [url, setUrl] = useState("");
