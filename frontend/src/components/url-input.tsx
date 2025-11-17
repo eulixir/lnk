@@ -60,9 +60,10 @@ export function UrlInput({ url, setUrl, requestShorten }: UrlInputProps) {
               onChange(e);
               setUrl(e.target.value);
             }}
-            className="bg-transparent dark:bg-transparent h-full text-foreground ml-3 sm:ml-4 outline-none border-none focus-visible:outline-none focus-visible:border-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm sm:text-base py-3 sm:py-0"
+            className="bg-transparent dark:bg-transparent h-full text-foreground ml-3 sm:ml-4 outline-none border-none focus-visible:outline-none focus-visible:border-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:bg-transparent selection:bg-[#30b6db]/30 selection:text-foreground text-sm sm:text-base py-3 sm:py-0"
             type="url"
             placeholder="Enter the link here"
+            autoComplete="off"
           />
         </div>
         <Button
