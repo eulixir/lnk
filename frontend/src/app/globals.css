@@ -96,20 +96,6 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
-  }
-
-  .gradient-text {
-    background: linear-gradient(
-      90deg,
-      #3b82f6 0%,
-      #8b5cf6 25%,
-      #ec4899 50%,
-      #8b5cf6 75%,
-      #3b82f6 100%
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    background-color: #0b101b;
   }
 }
