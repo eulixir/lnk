@@ -31,7 +31,7 @@ The project follows a clean architecture pattern with clear separation of concer
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone git@github.com:eulixir/lnk.git
 cd lnk
 ```
 
