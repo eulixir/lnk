@@ -11,14 +11,17 @@ import { Button } from "./ui/button";
 import { DialogHeader } from "./ui/dialog";
 import { Input } from "./ui/input";
 
-export function UrlDialog() {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [shortUrl, setShortUrl] = useState("");
-  const [url, setUrl] = useState("");
+interface UrlDialogProps {
+  shortUrl: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function UrlDialog({ shortUrl, open, onOpenChange }: UrlDialogProps) {
   const [copied, setCopied] = useState(false);
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -69,14 +72,12 @@ export function UrlDialog() {
             <div className="text-xs text-muted-foreground mb-1">
               Original URL
             </div>
-            <div className="text-sm break-all">{url}</div>
+            <div className="text-sm break-all">{shortUrl}</div>
           </div>
 
           <Button
             onClick={() => {
-              setDialogOpen(false);
-              setUrl("");
-              setShortUrl("");
+              onOpenChange(false);
             }}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white"
           >

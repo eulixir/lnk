@@ -8,10 +8,10 @@ export default defineConfig({
     },
     output: {
       target: "./src/api/lnk.ts",
-      client: "axios",
+      client: "fetch",
       override: {
         mutator: {
-          path: "./src/api/axios-instance.ts",
+          path: "./src/api/undici-instance.ts",
           name: "customInstance",
           default: false,
         },
