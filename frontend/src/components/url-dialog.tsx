@@ -5,11 +5,11 @@ import {
   DialogTitle,
 } from "@radix-ui/react-dialog";
 import { CheckCircle2, Copy, QrCode } from "lucide-react";
-import { useState } from "react";
-import { DialogHeader } from "./ui/dialog";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import Image from "next/image";
+import { useState } from "react";
+import { Button } from "./ui/button";
+import { DialogHeader } from "./ui/dialog";
+import { Input } from "./ui/input";
 
 export function UrlDialog() {
   const [dialogOpen, setDialogOpen] = useState(false);

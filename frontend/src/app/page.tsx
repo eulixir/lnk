@@ -11,7 +11,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-12 md:py-20">
+      <main className="container mx-auto px-4 py-12 md:py-20 mt-32">
         <div className="text-center mb-12 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 ">
             <span className="text-[#30b6db]">
