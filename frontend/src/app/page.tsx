@@ -18,7 +18,7 @@ export default function Home() {
               Shorten Your Loooong Links :)
             </span>
           </h1>
-          <p className="text-lg text-muted-foreground text-pretty max-w-2xl mx-auto">
+          <p className="text-lg text-foreground text-pretty max-w-2xl mx-auto">
             lnk is an efficient and easy-to-use URL shortening service that
             streamlines your online experience.
           </p>
