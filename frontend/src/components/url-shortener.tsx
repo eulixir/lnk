@@ -27,6 +27,8 @@ export function UrlShortener() {
 
       <UrlDialog
         shortUrl={shortUrl}
+        setUrl={setUrl}
+        originalUrl={url}
         open={dialogOpen}
         onOpenChange={setDialogOpen}
       />
