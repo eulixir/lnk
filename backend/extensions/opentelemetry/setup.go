@@ -3,8 +3,11 @@ package opentelemetry
 import (
 	"context"
 	"fmt"
+	"os"
+	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -12,7 +15,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-var tracer trace.Tracer
+var Tracer trace.Tracer
 
 func SetupOTelSDK(ctx context.Context, cfg *Config) (func(context.Context) error, error) {
 	exp, err := newExporter(ctx, cfg.Endpoint)
@@ -22,11 +25,12 @@ func SetupOTelSDK(ctx context.Context, cfg *Config) (func(context.Context) error
 
 	tp := newTracerProvider(exp, cfg.ServiceName)
 
-	defer func() { _ = tp.Shutdown(ctx) }()
-
 	otel.SetTracerProvider(tp)
+	
+	fmt.Fprintf(os.Stdout, "[DEBUG] OpenTelemetry tracer initialized, exporting to: %s\n", cfg.Endpoint)
+	os.Stdout.Sync()
 
-	tracer = tp.Tracer(cfg.ServiceName)
+	Tracer = tp.Tracer(cfg.ServiceName)
 
 	return func(ctx context.Context) error {
 		return tp.Shutdown(ctx)
@@ -34,7 +38,12 @@ func SetupOTelSDK(ctx context.Context, cfg *Config) (func(context.Context) error
 }
 
 func newExporter(ctx context.Context, endpoint string) (sdktrace.SpanExporter, error) {
-	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithEndpoint(endpoint), otlptracegrpc.WithInsecure())
+	client := otlptracegrpc.NewClient(
+		otlptracegrpc.WithEndpoint(endpoint),
+		otlptracegrpc.WithInsecure(),
+	)
+	
+	traceExporter, err := otlptrace.New(ctx, client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trace exporter: %w", err)
 	}
@@ -46,7 +55,7 @@ func newTracerProvider(exp sdktrace.SpanExporter, serviceName string) *sdktrace.
 		resource.Default(),
 		resource.NewWithAttributes(
 			semconv.SchemaURL,
-			semconv.ServiceName(serviceName),
+			semconv.ServiceNameKey.String(serviceName),
 		),
 	)
 
@@ -55,7 +64,10 @@ func newTracerProvider(exp sdktrace.SpanExporter, serviceName string) *sdktrace.
 	}
 
 	return sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exp),
+		sdktrace.WithBatcher(exp,
+			sdktrace.WithBatchTimeout(1*time.Second), // Flush batches every 1 second
+			sdktrace.WithMaxExportBatchSize(512),     // Export up to 512 spans per batch
+		),
 		sdktrace.WithResource(r),
 	)
 }
