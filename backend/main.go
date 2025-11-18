@@ -29,7 +29,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	shutdownOTel, err := setupOTelSDK(ctx)
+	shutdownOTel, err := setupOTelSDK(ctx, cfg)
 	if err != nil {
 		appLogger.Fatal("Failed to setup OpenTelemetry", zap.Error(err))
 	}
@@ -55,8 +55,8 @@ func main() {
 	shutdownServer(ctx, appLogger, server)
 }
 
-func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
-	return opentelemetry.SetupOTelSDK(ctx)
+func setupOTelSDK(ctx context.Context, cfg *config.Config) (func(context.Context) error, error) {
+	return opentelemetry.SetupOTelSDK(ctx, &cfg.OTel)
 }
 
 func setupConfigAndLogger() (*config.Config, *zap.Logger) {
