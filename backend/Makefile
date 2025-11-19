@@ -38,8 +38,3 @@ run-migrator:
 .PHONY: run-app
 run-app:
 	@docker compose run app
-	
-# compose up with 3 cassandra nodes and 4 app nodes
-.PHONY: compose-up
-compose-up:
-	@docker compose up -d --scale cassandra=3 --scale app=4

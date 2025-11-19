@@ -12,6 +12,9 @@ A high-performance URL shortener service built with Go, using Cassandra for pers
 - 📝 **API Documentation**: Swagger/OpenAPI documentation in development mode
 - 🏥 **Health Checks**: Built-in health check endpoint
 - 🧪 **Test Coverage**: Comprehensive test suite with isolated test databases
+- 🔍 **Observability**: OpenTelemetry integration for distributed tracing
+- ⚖️ **Load Balancing**: Nginx load balancer with 4 app replicas
+- 🔄 **HAProxy**: Cassandra load balancing for high availability
 
 ## Architecture
 
@@ -19,12 +22,41 @@ The project follows a clean architecture pattern with clear separation of concer
 
 - **Domain Layer**: Business logic and entities
 - **Gateway Layer**: External integrations (HTTP, Cassandra)
-- **Extension Layer**: Infrastructure utilities (config, logger, Redis)
+- **Extension Layer**: Infrastructure utilities (config, logger, Redis, OpenTelemetry)
+
+### System Architecture
+
+```
+┌─────────────┐
+│  Frontend   │ → http://localhost:8888
+└──────┬──────┘       
+       │
+┌──────▼──────┐
+│    Nginx    │ (Port 8888) - Load Balancer
+└──────┬──────┘      
+       │
+┌──────▼──────┐
+│  App (x4)   │ (Load balanced replicas)
+└──────┬──────┘        
+   ┌───┴──┐     
+┌──▼──┐ ┌─▼──┐
+│Redis│ │ DB │
+└─────┘ └──┬─┘   
+           │      
+      ┌────▼────┐
+      │HAProxy  │ (Cassandra Load Balancer)
+      └────┬────┘           
+           │
+      ┌────▼────┐
+      │Cassandra│
+      └─────────┘
+```
+
 
 ## Prerequisites
 
 - Go 1.24 or higher
-- Docker and Docker Compose (for running Cassandra and Redis)
+- Docker and Docker Compose (for running all services)
 - Make (optional, for using Makefile commands)
 
 ## Installation
@@ -35,88 +67,98 @@ git clone git@github.com:eulixir/lnk.git
 cd lnk
 ```
 
-2. Install dependencies:
+2. Install backend dependencies:
 ```bash
+cd backend
 go mod download
 ```
 
-3. Start required services using Docker Compose:
-```bash
-docker-compose up -d
-```
-
-This will start:
-- Redis on port `6379`
-- Cassandra on port `9042`
-
-> **⚠️ Important**: The Cassandra setup can take a significant amount of time (30-60 seconds or more) to fully initialize and be ready to accept connections. Wait for Cassandra to be healthy before starting the backend application. You can check readiness with:
-> ```bash
-> docker exec lnk-cassandra nodetool status
-> ```
-> When Cassandra is ready, you should see the node status as `UN` (Up Normal).
-
-4. Create a `.env` file in the project root with the following configuration:
+3. Copy `.env.example` to `.env` file in the `backend` directory with the following configuration:
 
 ```env
-# Application Configuration
-ENV=development
-PORT=8080
-GIN_MODE=debug
-BASE62_SALT=your-secret-salt-here
-
-# Cassandra Configuration
-CASSANDRA_HOST=localhost
+# Cassandra
+CASSANDRA_HOST=cassandra-lb
 CASSANDRA_PORT=9042
 CASSANDRA_USERNAME=cassandra
 CASSANDRA_PASSWORD=cassandra
 CASSANDRA_KEYSPACE=lnk
 CASSANDRA_AUTO_MIGRATE=true
 
-# Redis Configuration
-REDIS_HOST=localhost
+# APP
+ENV=development
+PORT=8080
+GIN_MODE=debug
+BASE62_SALT=banana
+
+# Redis
+REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_PASSWORD=
 REDIS_DB=0
-COUNTER_KEY=url_counter
-COUNTER_START_VAL=1000000
+COUNTER_KEY=short_url_counter
+COUNTER_START_VAL=14000000
 
-# Logger Configuration
-LOG_LEVEL=info
+# Log
+LOG_LEVEL=debug
+
+# Otel
+SERVICE_NAME=lnk-backend
+OTEL_EXPORTER_OTLP_ENDPOINT=grafana:4317
 ```
 
-**Note**: Make sure to set a secure `BASE62_SALT` value in production.
+**Note**: 
+- Make sure to set a secure `BASE62_SALT` value in production
+- Use Docker service names (e.g., `cassandra-lb`, `redis`, `grafana`) when running in Docker
+- Use `localhost` when running services locally outside Docker
+
+4. Start all services using Docker Compose:
+```bash
+cd backend
+docker-compose up -d
+```
+
+This will start all services. See [Docker Services](#docker-services) section for details.
 
 ## Running the Application
 
-### Development Mode
+### Docker Compose (Recommended)
 
-Run the application directly:
+All services are managed via Docker Compose:
+
 ```bash
-go run main.go
+cd backend
+docker-compose up -d          # Start all services
+docker-compose logs -f app    # View app logs
+docker-compose down           # Stop all services
+```
+
+The API will be available at `http://localhost:8888` (via Nginx load balancer).
+
+### Development Mode (Local)
+
+If you want to run the application locally outside Docker:
+
+1. Update `.env` to use `localhost` instead of Docker service names:
+```env
+CASSANDRA_HOST=localhost
+REDIS_HOST=localhost
+OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317
+```
+
+2. Start only the infrastructure services:
+```bash
+cd backend
+docker-compose up -d cassandra redis grafana
+```
+
+3. Run the application:
+```bash
+cd backend
+go run cmd/app/main.go
 ```
 
 The server will start on `http://localhost:8080` (or the port specified in your `.env` file).
 
-### Using Make
-
-The project includes a Makefile with useful commands:
-
-```bash
-# Run tests
-make test
-
-# Generate test coverage report
-make coverage
-
-# Generate Swagger documentation
-make swagger
-
-# Generate migrations (requires migrate tool)
-make generate-migration NAME=your_migration_name
-
-# Generate all (swagger + mocks)
-make generate
-```
 
 ## API Endpoints
 
@@ -177,51 +219,54 @@ Retrieve the original URL from a short code.
 
 In development mode, Swagger documentation is available at:
 ```
-http://localhost:8080/swagger/index.html
+http://localhost:8888/swagger/index.html
 ```
+
 
 ## Testing
 
-Run the full test suite:
 ```bash
-go test ./...
+cd backend
+make test        # Run tests
+make coverage    # Generate coverage report
 ```
 
-Or use the Makefile:
-```bash
-make test
-```
-
-Generate test coverage:
-```bash
-make coverage
-```
-
-The tests use isolated test databases that are automatically created and cleaned up for each test.
+Tests use isolated test databases that are automatically created and cleaned up.
 
 ## Project Structure
 
 ```
 lnk/
-├── domain/                  # Domain layer
-│   └── entities/
-│       ├── helpers/        # URL encoding/decoding utilities
-│       └── usecases/       # Business logic
-├── gateways/               # Gateway layer
-│   ├── gocql/             # Cassandra integration
-│   │   ├── migrations/    # Database migrations
-│   │   └── repositories/  # Data access layer
-│   └── http/              # HTTP handlers and router
-├── extensions/             # Infrastructure extensions
-│   ├── config/            # Configuration management
-│   ├── logger/            # Logging utilities
-│   ├── redis/             # Redis client
-│   └── gocqltesting/      # Testing utilities
-├── docs/                   # Swagger documentation
-├── main.go                 # Application entry point
-├── docker-compose.yml      # Docker services configuration
-├── Makefile               # Build automation
-└── README.md              # This file
+├── backend/
+│   ├── cmd/
+│   │   ├── app/
+│   │   │   └── main.go           # Application entry point
+│   │   └── migrator/
+│   │       └── main.go           # Migration service
+│   ├── domain/                   # Domain layer
+│   │   └── entities/
+│   │       ├── helpers/          # URL encoding/decoding utilities
+│   │       └── usecases/         # Business logic
+│   ├── gateways/                 # Gateway layer
+│   │   ├── gocql/                # Cassandra integration
+│   │   │   ├── migrations/       # Database migrations
+│   │   │   └── repositories/     # Data access layer
+│   │   └── http/                 # HTTP handlers and router
+│   ├── extensions/               # Infrastructure extensions
+│   │   ├── config/               # Configuration management
+│   │   ├── logger/               # Logging utilities
+│   │   ├── redis/                # Redis client
+│   │   └── opentelemetry/        # OpenTelemetry setup
+│   ├── nginx/
+│   │   └── nginx.conf            # Nginx load balancer config
+│   ├── haproxy/
+│   │   └── haproxy.cfg           # HAProxy Cassandra LB config
+│   ├── docker-compose.yml        # Docker services configuration
+│   ├── Dockerfile                # Multi-stage build (migrator + app)
+│   ├── Makefile                  # Build automation
+│   └── .env                      # Environment configuration
+├── frontend/                     # Next.js frontend application
+└── Readme.md                     # This file
 ```
 
 ## Database Schema
@@ -240,6 +285,7 @@ CREATE TABLE urls (
 ```
 
 This design ensures fast lookups when retrieving URLs by their short code.
+
 
 ## Frontend
 
@@ -281,7 +327,7 @@ npm run generate:api
 bun run generate:api
 ```
 
-**Note**: Make sure the backend is running and Swagger documentation is available at `http://localhost:8080/swagger/doc.json` before generating the API client.
+**Note**: Make sure the backend is running and Swagger documentation is available at `http://localhost:8888/swagger/doc.json` before generating the API client.
 
 ### Running the Frontend
 
@@ -294,6 +340,8 @@ bun run dev
 ```
 
 The frontend will start on `http://localhost:3000` (default Next.js port).
+
+**Important**: Update the API base URL in `frontend/src/api/undici-instance.ts` to point to `http://localhost:8888` (Nginx load balancer).
 
 #### Production Build
 
@@ -314,19 +362,6 @@ bun run start
 - `npm run lint:fix` / `bun run lint:fix`: Fix linting issues
 - `npm run format` / `bun run format`: Format code
 - `npm run generate:api` / `bun run generate:api`: Generate API client from Swagger
-
-### Frontend Technologies
-
-- **Next.js 16**: React framework with App Router
-- **React 19**: UI library
-- **TypeScript**: Type safety
-- **Tailwind CSS**: Utility-first CSS framework
-- **shadcn/ui**: High-quality component library
-- **Orval**: OpenAPI client generator
-- **Biome**: Fast linter and formatter
-- **React Hook Form**: Form management
-- **Sonner**: Toast notifications
-- **Lucide React**: Icon library
 
 ### Frontend Project Structure
 
@@ -361,8 +396,11 @@ frontend/
 - **Cassandra (gocql)**: Database for URL storage
 - **Redis**: Counter management for URL generation
 - **Zap**: Structured logging
+- **OpenTelemetry**: Distributed tracing
 - **Swagger/OpenAPI**: API documentation
 - **Docker Compose**: Local development environment
+- **Nginx**: Load balancer
+- **HAProxy**: Cassandra load balancer
 - **Testify**: Testing framework
 
 ### Frontend
@@ -373,58 +411,111 @@ frontend/
 - **shadcn/ui**: Component library
 - **Orval**: API client generator
 
-## Configuration
-
-The application uses environment variables for configuration. All configuration options can be set in a `.env` file or as environment variables.
-
-### Required Environment Variables
-
-- `BASE62_SALT`: Secret salt for URL encoding
-- `CASSANDRA_HOST`: Cassandra host address
-- `CASSANDRA_PORT`: Cassandra port
-- `CASSANDRA_USERNAME`: Cassandra username
-- `CASSANDRA_PASSWORD`: Cassandra password
-- `CASSANDRA_KEYSPACE`: Cassandra keyspace name
-- `REDIS_HOST`: Redis host address
-- `REDIS_PORT`: Redis port
-- `REDIS_PASSWORD`: Redis password
-- `REDIS_DB`: Redis database number
-- `COUNTER_KEY`: Redis key for URL counter
-- `COUNTER_START_VAL`: Starting value for URL counter
-
-### Optional Environment Variables
-
-- `ENV`: Environment name (default: `development`)
-- `PORT`: Server port (default: `8080`)
-- `GIN_MODE`: Gin mode (default: `debug`)
-- `LOG_LEVEL`: Logging level (default: `info`)
-- `CASSANDRA_AUTO_MIGRATE`: Auto-run migrations (default: `false`)
-
 ## Development
 
-### Adding a New Migration
+### Makefile Commands
 
 ```bash
+cd backend
+
+# Testing
+make test              # Run tests
+make coverage          # Generate test coverage report
+
+# Documentation
+make swagger           # Generate Swagger documentation
+
+# Migrations
+make generate-migration NAME=your_migration_name  # Create new migration
+# Migrations auto-run via migrator service when using docker-compose
+
+# Code Generation
+make generate          # Generate all (swagger + mocks)
+```
+
+### Database Migrations
+
+Migrations run automatically via the `migrator` service before the app starts. To add a new migration:
+
+```bash
+cd backend
 make generate-migration NAME=your_migration_name
 ```
 
-This will create up and down migration files in `gateways/gocql/migrations/`.
+This creates migration files in `gateways/gocql/migrations/` that will run automatically on next `docker-compose up`.
 
-### Generating Swagger Documentation
+## Docker Services
 
-After updating API endpoints with Swagger annotations:
+### Service Overview
 
+| Service | Port | Description |
+|---------|------|-------------|
+| **Nginx** | 8888 | Load balancer (frontend access point) |
+| **App** | 8080 | Application service (4 replicas, internal) |
+| **Migrator** | - | Runs database migrations, then exits |
+| **HAProxy** | 9042 | Cassandra load balancer |
+| **Cassandra** | - | Primary database (accessed via HAProxy) |
+| **Redis** | 6379 | Counter management and caching |
+| **Grafana** | 8081, 4317 | Observability UI (8081) and OTLP gRPC (4317) |
+
+### Service Startup Order
+
+Services start in the following order with health checks:
+
+1. **Cassandra** → waits until healthy (`nodetool status`)
+2. **HAProxy** → waits for Cassandra, checks with `pgrep haproxy`
+3. **Redis** → checks with `redis-cli ping`
+4. **Grafana** → observability stack
+5. **Migrator** → waits for Cassandra, runs migrations, exits
+6. **App** → waits for migrator completion, 4 replicas, HTTP health check
+7. **Nginx** → waits for app service
+
+Check service status:
 ```bash
-make swagger
+docker-compose ps
 ```
 
-### Code Generation
+### Observability
 
-Generate mocks and documentation:
+OpenTelemetry traces are automatically exported to Grafana:
+- **OTLP Endpoint**: `grafana:4317` (gRPC) when running in Docker
+- **Grafana UI**: `http://localhost:8081` (admin/admin)
+- **Service Name**: `lnk-backend` (configurable via `SERVICE_NAME` env var)
 
+## Troubleshooting
+
+### Services not starting
+
+Check service logs:
 ```bash
-make generate
+docker-compose logs -f [service-name]
 ```
 
+Check service status:
+```bash
+docker-compose ps
+```
 
+### Migrations failing
 
+Check migrator logs:
+```bash
+docker-compose logs migrator
+```
+
+Ensure Cassandra is healthy:
+```bash
+docker-compose exec cassandra nodetool status
+```
+
+### Can't connect to services
+
+- Verify service names in `.env` match Docker service names
+- Check that services are on the same Docker network (`lnk-network`)
+- Verify ports are not already in use
+
+### Frontend can't reach backend
+
+- Ensure backend is running: `http://localhost:8888/health`
+- Check CORS configuration in `gateways/http/middleware/middleware.go`
+- Verify API base URL in frontend configuration
