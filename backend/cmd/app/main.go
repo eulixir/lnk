@@ -58,14 +58,10 @@ func main() {
 		}
 	}()
 
-	setInitialCounter, err := initializeCounter(ctx, redisClient, cfg, logger)
+	err = initializeCounter(ctx, redisClient, cfg, logger)
 	if err != nil {
 		log.Fatalf("Failed to initialize counter: %v", err)
 	}
-	if !setInitialCounter {
-		log.Fatalf("Failed to set initial counter")
-	}
-
 	useCase := createUseCase(cfg, logger, session, redisClient)
 	server, err := createAndStartServer(cfg, logger, useCase)
 	if err != nil {
@@ -117,13 +113,13 @@ func setupRedis(ctx context.Context, cfg *config.Config, logger *zap.Logger) (*r
 	return redisClient, nil
 }
 
-func initializeCounter(ctx context.Context, redisClient *redis.Client, cfg *config.Config, logger *zap.Logger) (bool, error) {
-	setInitialCounter, err := redisPackage.SetInitialCounterValue(ctx, redisClient, &cfg.Redis, logger)
-	if err != nil && !setInitialCounter {
-		return false, fmt.Errorf("failed to set initial counter: %w", err)
+func initializeCounter(ctx context.Context, redisClient *redis.Client, cfg *config.Config, logger *zap.Logger) error {
+	_, err := redisPackage.SetInitialCounterValue(ctx, redisClient, &cfg.Redis, logger)
+	if err != nil {
+		return fmt.Errorf("failed to set initial counter: %w", err)
 	}
 
-	return setInitialCounter, nil
+	return nil
 }
 
 func createUseCase(cfg *config.Config, logger *zap.Logger, session *gocql.Session, redisClient *redis.Client) *usecases.UseCase {

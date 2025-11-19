@@ -28,10 +28,6 @@ services:
 
   app:
     build: .
-    environment:
-      - CASSANDRA_HOSTS=cassandra-lb:9042
-      - REDIS_HOST=redis:6379
-      - PORT=8080
     volumes:
       - ./.env:/app/.env:ro
     networks:
@@ -51,6 +47,7 @@ services:
   cassandra-lb:
     image: haproxy:2.8-alpine
     container_name: lnk-cassandra-lb
+    command: ["haproxy", "-f", "/usr/local/etc/haproxy/haproxy.cfg"]
     ports:
       - "9042:9042"
       - "8404:8404"
@@ -60,10 +57,11 @@ services:
       cassandra:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "9042"]
+      test: ["CMD-SHELL", "pgrep haproxy > /dev/null"]
       interval: 5s
       timeout: 3s
-      retries: 5
+      retries: 10
+      start_period: 10s
     networks:
       - lnk-network
 
