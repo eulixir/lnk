@@ -7,12 +7,17 @@ RUN go mod download && go mod verify
 
 COPY . .
 
-RUN go build -o main main.go
+# Build both migrator and app binaries
+RUN go build -o migrator ./cmd/migrator/main.go
+RUN go build -o app ./cmd/app/main.go
 
 FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/main .
+# Copy both binaries
+COPY --from=builder /app/migrator .
+COPY --from=builder /app/app .
 
-CMD ["./main"]
+# Default to running the app
+CMD ["./app"]

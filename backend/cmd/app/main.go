@@ -85,7 +85,7 @@ func setupConfigAndLogger() (*config.Config, *zap.Logger) {
 }
 
 func setupDatabase(cfg *config.Config, appLogger *zap.Logger) *gocql.Session {
-	session, err := gocqlPackage.SetupDatabase(&cfg.Gocql, appLogger)
+	session, err := gocqlPackage.SetupDatabase(&cfg.Gocql, appLogger, false)
 	if err != nil {
 		appLogger.Fatal("Failed to setup database", zap.Error(err))
 	}

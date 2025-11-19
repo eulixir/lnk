@@ -11,6 +11,21 @@ services:
     networks:
       - lnk-network
 
+  migrator:
+    build: .
+    container_name: lnk-migrator
+    command: ["./migrator"]
+    volumes:
+      - ./.env:/app/.env:ro
+    networks:
+      - lnk-network
+    depends_on:
+      cassandra-lb:
+        condition: service_healthy
+    env_file:
+      - .env
+    restart: "no"
+
   app:
     build: .
     environment:
@@ -22,8 +37,12 @@ services:
     networks:
       - lnk-network
     depends_on:
-      - cassandra-lb
-      - redis
+      migrator:
+        condition: service_completed_successfully
+      cassandra-lb:
+        condition: service_healthy
+      redis:
+        condition: service_started
     deploy:
       replicas: 4
     env_file:
@@ -38,7 +57,13 @@ services:
     volumes:
       - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
     depends_on:
-      - cassandra
+      cassandra:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9042"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
       - lnk-network
 
@@ -54,6 +79,12 @@ services:
       - CASSANDRA_PASSWORD=cassandra
     volumes:
       - cassandra-data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "nodetool status | grep -E '^UN'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
     networks:
       - lnk-network
 
@@ -62,6 +93,11 @@ services:
     container_name: lnk-redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
       - lnk-network
 

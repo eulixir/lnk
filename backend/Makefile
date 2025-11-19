@@ -30,6 +30,14 @@ lint:
 format:
 	@gofmt -w .
 	@gofumpt -w .
+
+.PHONY: run-migrator
+run-migrator:
+	@docker compose run migrator
+	
+.PHONY: run-app
+run-app:
+	@docker compose run app
 	
 # compose up with 3 cassandra nodes and 4 app nodes
 .PHONY: compose-up

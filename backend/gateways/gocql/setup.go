@@ -7,12 +7,13 @@ import (
 	"strconv"
 	"time"
 
+	"lnk/gateways/gocql/migrations"
+
 	gocql "github.com/apache/cassandra-gocql-driver/v2"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/cassandra"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"go.uber.org/zap"
-	"lnk/gateways/gocql/migrations"
 )
 
 const (
@@ -21,7 +22,7 @@ const (
 	shutdownTimeout = 5 * time.Second
 )
 
-func SetupDatabase(config *Config, logger *zap.Logger) (*gocql.Session, error) {
+func SetupDatabase(config *Config, logger *zap.Logger, autoMigrate bool) (*gocql.Session, error) {
 	cluster := gocql.NewCluster(config.Host)
 	cluster.Port = config.Port
 	cluster.Authenticator = gocql.PasswordAuthenticator{
@@ -57,7 +58,7 @@ func SetupDatabase(config *Config, logger *zap.Logger) (*gocql.Session, error) {
 	session.Close()
 	session = sessionWithKeyspace
 
-	if config.AutoMigrate {
+	if autoMigrate {
 		err := runMigrations(config, logger)
 		if err != nil {
 			return nil, fmt.Errorf("failed to run migrations: %w", err)
