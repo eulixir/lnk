@@ -35,27 +35,37 @@ func main() {
 		appLogger.Fatal("Failed to setup OpenTelemetry", zap.Error(err))
 	}
 	defer func() {
-		if err := shutdownOTel(ctx); err != nil {
-			appLogger.Error("Failed to shutdown OpenTelemetry", zap.Error(err))
+		if shutdownErr := shutdownOTel(ctx); shutdownErr != nil {
+			appLogger.Error("Failed to shutdown OpenTelemetry", zap.Error(shutdownErr))
 		}
 	}()
 
-	session := setupDatabase(cfg, appLogger)
+	session, err := setupDatabase(cfg, appLogger)
+	if err != nil {
+		appLogger.Fatal("Failed to setup database", zap.Error(err))
+	}
 	defer session.Close()
 
-	redisClient := setupRedis(ctx, cfg, appLogger)
+	redisClient, err := setupRedis(ctx, cfg, appLogger)
+	if err != nil {
+		appLogger.Fatal("Failed to setup Redis", zap.Error(err))
+	}
 
 	defer func() {
-		err := redisClient.Close()
-		if err != nil {
-			appLogger.Error("Failed to close Redis client", zap.Error(err))
+		if closeErr := redisClient.Close(); closeErr != nil {
+			appLogger.Error("Failed to close Redis client", zap.Error(closeErr))
 		}
 	}()
 
-	initializeCounter(ctx, redisClient, cfg, appLogger)
-
+	err = initializeCounter(ctx, redisClient, cfg, appLogger)
+	if err != nil {
+		appLogger.Fatal("Failed to initialize counter", zap.Error(err))
+	}
 	useCase := createUseCase(cfg, appLogger, session, redisClient)
-	server := createAndStartServer(cfg, appLogger, useCase)
+	server, err := createAndStartServer(cfg, appLogger, useCase)
+	if err != nil {
+		appLogger.Fatal("Failed to create and start server", zap.Error(err))
+	}
 
 	shutdownServer(ctx, appLogger, server)
 }
@@ -84,29 +94,31 @@ func setupConfigAndLogger() (*config.Config, *zap.Logger) {
 	return cfg, appLogger
 }
 
-func setupDatabase(cfg *config.Config, appLogger *zap.Logger) *gocql.Session {
-	session, err := gocqlPackage.SetupDatabase(&cfg.Gocql, appLogger)
+func setupDatabase(cfg *config.Config, appLogger *zap.Logger) (*gocql.Session, error) {
+	session, err := gocqlPackage.SetupDatabase(&cfg.Gocql, appLogger, false)
 	if err != nil {
-		appLogger.Fatal("Failed to setup database", zap.Error(err))
+		return nil, fmt.Errorf("failed to setup database: %w", err)
 	}
 
-	return session
+	return session, nil
 }
 
-func setupRedis(ctx context.Context, cfg *config.Config, appLogger *zap.Logger) *redis.Client {
+func setupRedis(ctx context.Context, cfg *config.Config, appLogger *zap.Logger) (*redis.Client, error) {
 	redisClient, err := redisPackage.SetupRedis(ctx, &cfg.Redis, appLogger)
 	if err != nil {
-		appLogger.Fatal("Failed to setup Redis", zap.Error(err))
+		return nil, fmt.Errorf("failed to setup Redis: %w", err)
 	}
 
-	return redisClient
+	return redisClient, nil
 }
 
-func initializeCounter(ctx context.Context, redisClient *redis.Client, cfg *config.Config, appLogger *zap.Logger) {
-	setInitialCounter, err := redisPackage.SetInitialCounterValue(ctx, redisClient, &cfg.Redis, appLogger)
-	if err != nil && !setInitialCounter {
-		appLogger.Fatal("Failed to set initial counter", zap.Error(err))
+func initializeCounter(ctx context.Context, redisClient *redis.Client, cfg *config.Config, appLogger *zap.Logger) error {
+	_, err := redisPackage.SetInitialCounterValue(ctx, redisClient, &cfg.Redis, appLogger)
+	if err != nil {
+		return fmt.Errorf("failed to set initial counter: %w", err)
 	}
+
+	return nil
 }
 
 func createUseCase(cfg *config.Config, appLogger *zap.Logger, session *gocql.Session, redisClient *redis.Client) *usecases.UseCase {
@@ -122,7 +134,7 @@ func createUseCase(cfg *config.Config, appLogger *zap.Logger, session *gocql.Ses
 	})
 }
 
-func createAndStartServer(cfg *config.Config, appLogger *zap.Logger, useCase *usecases.UseCase) *httpServer.Server {
+func createAndStartServer(cfg *config.Config, appLogger *zap.Logger, useCase *usecases.UseCase) (*httpServer.Server, error) {
 	httpHandlers := handlers.NewHandlers(appLogger, useCase)
 
 	router := httpServer.NewRouter(httpServer.RouterConfig{
@@ -136,10 +148,10 @@ func createAndStartServer(cfg *config.Config, appLogger *zap.Logger, useCase *us
 
 	err := server.Start()
 	if err != nil {
-		appLogger.Fatal("Failed to start HTTP server", zap.Error(err))
+		return nil, fmt.Errorf("failed to start HTTP server: %w", err)
 	}
 
-	return server
+	return server, nil
 }
 
 func shutdownServer(ctx context.Context, appLogger *zap.Logger, server *httpServer.Server) {

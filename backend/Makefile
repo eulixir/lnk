@@ -30,3 +30,11 @@ lint:
 format:
 	@gofmt -w .
 	@gofumpt -w .
+
+.PHONY: run-migrator
+run-migrator:
+	@docker compose run migrator
+	
+.PHONY: run-app
+run-app:
+	@docker compose run app
