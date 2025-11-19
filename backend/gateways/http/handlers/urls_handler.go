@@ -70,8 +70,8 @@ func (h *URLsHandler) CreateURL(c *gin.Context) {
 	defer span.End()
 
 	var req CreateURLRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		err = fmt.Errorf("failed to bind JSON: %w", err)
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		err = fmt.Errorf("failed to bind JSON: %w", bindErr)
 		span.SetStatus(codes.Error, err.Error())
 		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
 		return

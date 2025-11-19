@@ -38,7 +38,7 @@ func SetupOTelSDK(ctx context.Context, cfg *Config) (func(context.Context) error
 	otel.SetTracerProvider(tp)
 	otel.SetMeterProvider(mp)
 
-	os.Stdout.Sync()
+	_ = os.Stdout.Sync()
 
 	Tracer = tp.Tracer(cfg.ServiceName)
 	Meter = mp.Meter(cfg.ServiceName)

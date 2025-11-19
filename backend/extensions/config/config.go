@@ -14,10 +14,10 @@ import (
 
 type Config struct {
 	App    App
+	OTel   opentelemetry.Config
 	Logger logger.Config
 	Gocql  gocql.Config
 	Redis  redis.Config
-	OTel   opentelemetry.Config
 }
 
 type App struct {

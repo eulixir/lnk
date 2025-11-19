@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -33,7 +34,11 @@ func main() {
 	if err != nil {
 		appLogger.Fatal("Failed to setup OpenTelemetry", zap.Error(err))
 	}
-	defer shutdownOTel(ctx)
+	defer func() {
+		if err := shutdownOTel(ctx); err != nil {
+			appLogger.Error("Failed to shutdown OpenTelemetry", zap.Error(err))
+		}
+	}()
 
 	session := setupDatabase(cfg, appLogger)
 	defer session.Close()
@@ -56,7 +61,11 @@ func main() {
 }
 
 func setupOTelSDK(ctx context.Context, cfg *config.Config) (func(context.Context) error, error) {
-	return opentelemetry.SetupOTelSDK(ctx, &cfg.OTel)
+	shutdown, err := opentelemetry.SetupOTelSDK(ctx, &cfg.OTel)
+	if err != nil {
+		return nil, fmt.Errorf("failed to setup OpenTelemetry SDK: %w", err)
+	}
+	return shutdown, nil
 }
 
 func setupConfigAndLogger() (*config.Config, *zap.Logger) {
