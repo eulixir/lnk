@@ -15,8 +15,7 @@ import (
 
 func (r *Repository) CreateURL(ctx context.Context, url *entities.URL) error {
 	tracer := otel.Tracer("repositories.CreateURL")
-	ctx, span := tracer.Start(ctx, "CreateURL")
-	defer span.End()
+	ctx, span := tracer.Start(ctx, "CreateURLRepository")
 
 	var err error
 	defer func() {
@@ -25,6 +24,7 @@ func (r *Repository) CreateURL(ctx context.Context, url *entities.URL) error {
 			span.SetStatus(codes.Error, err.Error())
 		}
 	}()
+	defer span.End()
 
 	url.CreatedAt = time.Now().UTC()
 
@@ -41,8 +41,7 @@ func (r *Repository) CreateURL(ctx context.Context, url *entities.URL) error {
 
 func (r *Repository) GetURLByShortCode(ctx context.Context, shortCode string) (*entities.URL, error) {
 	tracer := otel.Tracer("repositories.GetURLByShortCode")
-	ctx, span := tracer.Start(ctx, "GetURLByShortCode")
-	defer span.End()
+	ctx, span := tracer.Start(ctx, "GetURLByShortCodeRepository")
 
 	var err error
 	defer func() {
@@ -51,6 +50,7 @@ func (r *Repository) GetURLByShortCode(ctx context.Context, shortCode string) (*
 			span.SetStatus(codes.Error, err.Error())
 		}
 	}()
+	defer span.End()
 
 	var url entities.URL
 

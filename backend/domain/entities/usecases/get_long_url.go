@@ -10,8 +10,7 @@ import (
 
 func (uc *UseCase) GetLongURL(ctx context.Context, shortCode string) (string, error) {
 	tracer := otel.Tracer("usecases.GetLongURL")
-	ctx, span := tracer.Start(ctx, "GetLongURL")
-	defer span.End()
+	ctx, span := tracer.Start(ctx, "GetLongURLUsecase")
 
 	var err error
 	defer func() {
@@ -20,9 +19,9 @@ func (uc *UseCase) GetLongURL(ctx context.Context, shortCode string) (string, er
 			span.SetStatus(codes.Error, err.Error())
 		}
 	}()
+	defer span.End()
 
 	url, err := uc.repository.GetURLByShortCode(ctx, shortCode)
-
 	if url == nil {
 		return "", ErrURLNotFound
 	}

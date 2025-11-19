@@ -13,7 +13,7 @@ import (
 
 func (uc *UseCase) CreateShortURL(ctx context.Context, longURL string) (string, error) {
 	tracer := otel.Tracer("usecases.CreateShortURL")
-	ctx, span := tracer.Start(ctx, "CreateShortURL")
+	ctx, span := tracer.Start(ctx, "CreateShortURLUsecase")
 	var err error
 
 	defer func() {
