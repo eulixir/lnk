@@ -30,3 +30,8 @@ lint:
 format:
 	@gofmt -w .
 	@gofumpt -w .
+	
+# compose up with 3 cassandra nodes and 4 app nodes
+.PHONY: compose-up
+compose-up:
+	@docker compose up -d --scale cassandra=3 --scale app=4
