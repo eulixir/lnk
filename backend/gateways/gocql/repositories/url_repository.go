@@ -6,14 +6,29 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gocql/gocql"
 	"lnk/domain/entities"
+
+	"github.com/gocql/gocql"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
 
 func (r *Repository) CreateURL(ctx context.Context, url *entities.URL) error {
+	tracer := otel.Tracer("repositories.CreateURL")
+	ctx, span := tracer.Start(ctx, "CreateURLRepository")
+
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+	}()
+	defer span.End()
+
 	url.CreatedAt = time.Now().UTC()
 
-	err := r.session.Query(
+	err = r.session.Query(
 		"INSERT INTO urls (short_code, long_url, created_at) VALUES (?, ?, ?)",
 		url.ShortCode, url.LongURL, url.CreatedAt,
 	).ExecContext(ctx)
@@ -24,13 +39,25 @@ func (r *Repository) CreateURL(ctx context.Context, url *entities.URL) error {
 	return nil
 }
 
-func (r *Repository) GetURLByShortCode(shortCode string) (*entities.URL, error) {
+func (r *Repository) GetURLByShortCode(ctx context.Context, shortCode string) (*entities.URL, error) {
+	tracer := otel.Tracer("repositories.GetURLByShortCode")
+	ctx, span := tracer.Start(ctx, "GetURLByShortCodeRepository")
+
+	var err error
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+	}()
+	defer span.End()
+
 	var url entities.URL
 
-	err := r.session.Query(
+	err = r.session.Query(
 		"SELECT short_code, long_url, created_at FROM urls WHERE short_code = ?",
 		shortCode,
-	).Scan(&url.ShortCode, &url.LongURL, &url.CreatedAt)
+	).ScanContext(ctx, &url.ShortCode, &url.LongURL, &url.CreatedAt)
 	if err != nil {
 		if errors.Is(err, gocql.ErrNotFound) {
 			return nil, gocql.ErrNotFound

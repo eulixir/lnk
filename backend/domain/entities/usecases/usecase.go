@@ -3,9 +3,10 @@ package usecases
 import (
 	"errors"
 
-	"go.uber.org/zap"
 	"lnk/extensions/redis"
 	"lnk/gateways/gocql/repositories"
+
+	"go.uber.org/zap"
 )
 
 var ErrURLNotFound = errors.New("URL not found")

@@ -2,23 +2,26 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	gocql "github.com/apache/cassandra-gocql-driver/v2"
-	redis "github.com/redis/go-redis/v9"
-	"go.uber.org/zap"
 	"lnk/domain/entities/usecases"
 	"lnk/extensions/config"
 	"lnk/extensions/logger"
+	"lnk/extensions/opentelemetry"
 	redisPackage "lnk/extensions/redis"
 	gocqlPackage "lnk/gateways/gocql"
 	"lnk/gateways/gocql/repositories"
 	httpServer "lnk/gateways/http"
 	"lnk/gateways/http/handlers"
+
+	gocql "github.com/apache/cassandra-gocql-driver/v2"
+	redis "github.com/redis/go-redis/v9"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -26,6 +29,16 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	shutdownOTel, err := setupOTelSDK(ctx, cfg)
+	if err != nil {
+		appLogger.Fatal("Failed to setup OpenTelemetry", zap.Error(err))
+	}
+	defer func() {
+		if err := shutdownOTel(ctx); err != nil {
+			appLogger.Error("Failed to shutdown OpenTelemetry", zap.Error(err))
+		}
+	}()
 
 	session := setupDatabase(cfg, appLogger)
 	defer session.Close()
@@ -45,6 +58,14 @@ func main() {
 	server := createAndStartServer(cfg, appLogger, useCase)
 
 	shutdownServer(ctx, appLogger, server)
+}
+
+func setupOTelSDK(ctx context.Context, cfg *config.Config) (func(context.Context) error, error) {
+	shutdown, err := opentelemetry.SetupOTelSDK(ctx, &cfg.OTel)
+	if err != nil {
+		return nil, fmt.Errorf("failed to setup OpenTelemetry SDK: %w", err)
+	}
+	return shutdown, nil
 }
 
 func setupConfigAndLogger() (*config.Config, *zap.Logger) {

@@ -3,15 +3,18 @@ package config
 import (
 	"fmt"
 
-	"github.com/joho/godotenv"
-	"github.com/kelseyhightower/envconfig"
 	"lnk/extensions/logger"
+	"lnk/extensions/opentelemetry"
 	"lnk/extensions/redis"
 	"lnk/gateways/gocql"
+
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Config struct {
 	App    App
+	OTel   opentelemetry.Config
 	Logger logger.Config
 	Gocql  gocql.Config
 	Redis  redis.Config

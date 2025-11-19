@@ -99,3 +99,9 @@
     background-color: #0b101b;
   }
 }
+
+@layer utilities {
+  [data-sonner-toast][data-type="success"] [data-icon] {
+    color: #30b6db;
+  }
+}
