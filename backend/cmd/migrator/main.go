@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"lnk/extensions/config"
@@ -12,11 +13,16 @@ import (
 )
 
 func main() {
-	cfg, appLogger := setupConfigAndLogger()
+	cfg, logger := setupConfigAndLogger()
 
-	session := setupDatabase(cfg, appLogger)
+	session, err := setupDatabase(cfg, logger)
+	if err != nil {
+		log.Fatalf("Failed to setup database: %v", err)
+	}
+
 	defer session.Close()
 
+	logger.Info("Migrations completed successfully")
 }
 
 func setupConfigAndLogger() (*config.Config, *zap.Logger) {
@@ -25,21 +31,21 @@ func setupConfigAndLogger() (*config.Config, *zap.Logger) {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	appLogger, err := logger.NewLogger(cfg.Logger)
+	logger, err := logger.NewLogger(cfg.Logger)
 	if err != nil {
 		log.Fatalf("Failed to create logger: %v", err)
 	}
 
-	appLogger.Info("Starting application")
+	logger.Info("Starting application")
 
-	return cfg, appLogger
+	return cfg, logger
 }
 
-func setupDatabase(cfg *config.Config, appLogger *zap.Logger) *gocql.Session {
-	session, err := gocqlPackage.SetupDatabase(&cfg.Gocql, appLogger, cfg.Gocql.AutoMigrate)
+func setupDatabase(cfg *config.Config, logger *zap.Logger) (*gocql.Session, error) {
+	session, err := gocqlPackage.SetupDatabase(&cfg.Gocql, logger, cfg.Gocql.AutoMigrate)
 	if err != nil {
-		appLogger.Fatal("Failed to setup database", zap.Error(err))
+		return nil, fmt.Errorf("failed to setup database: %w", err)
 	}
 
-	return session
+	return session, nil
 }
