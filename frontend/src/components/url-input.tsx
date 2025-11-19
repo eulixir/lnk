@@ -1,35 +1,34 @@
 import { LinkIcon } from "lucide-react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useUrlShortener } from "@/providers/url-shortener-provider";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-
-interface UrlInputProps {
-  url: string;
-  setUrl: (url: string) => void;
-  requestShorten: () => void;
-}
 
 interface FormData {
   url: string;
 }
 
-export function UrlInput({ url, setUrl, requestShorten }: UrlInputProps) {
-  const {
-    register,
-    handleSubmit,
-    formState: { isValid },
-  } = useForm<FormData>({
+export function UrlInput() {
+  const { url, setUrl, requestShorten } = useUrlShortener();
+  const { register, handleSubmit, reset, watch } = useForm<FormData>({
     mode: "onChange",
     defaultValues: {
-      url,
+      url: "",
     },
   });
 
-  const onSubmit = (data: FormData) => {
-    if (isValid) {
-      setUrl(data.url);
-      requestShorten();
+  const formUrl = watch("url");
+
+  useEffect(() => {
+    if (url === "") {
+      reset({ url: "" });
     }
+  }, [url, reset]);
+
+  const onSubmit = (data: FormData) => {
+    setUrl(data.url);
+    requestShorten();
   };
 
   const validateUrl = (value: string) => {
@@ -48,6 +47,8 @@ export function UrlInput({ url, setUrl, requestShorten }: UrlInputProps) {
     required: "URL is required",
     validate: validateUrl,
   });
+
+  const isFormValid = formUrl && validateUrl(formUrl) === true;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full px-4 sm:px-6">
@@ -68,7 +69,7 @@ export function UrlInput({ url, setUrl, requestShorten }: UrlInputProps) {
         </div>
         <Button
           type="submit"
-          disabled={!isValid}
+          disabled={!isFormValid}
           className="bg-[#30b6db] text-primary-foreground sm:rounded-4xl w-full sm:w-[178px] h-full sm:h-[60px] cursor-pointer hover:shadow-lg hover:bg-[#30b6db]/90 transition-all duration-300 sm:mr-0.5 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
         >
           Shorten

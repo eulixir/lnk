@@ -26,8 +26,7 @@ func SetupOTelSDK(ctx context.Context, cfg *Config) (func(context.Context) error
 	tp := newTracerProvider(exp, cfg.ServiceName)
 
 	otel.SetTracerProvider(tp)
-	
-	fmt.Fprintf(os.Stdout, "[DEBUG] OpenTelemetry tracer initialized, exporting to: %s\n", cfg.Endpoint)
+
 	os.Stdout.Sync()
 
 	Tracer = tp.Tracer(cfg.ServiceName)
@@ -42,7 +41,7 @@ func newExporter(ctx context.Context, endpoint string) (sdktrace.SpanExporter, e
 		otlptracegrpc.WithEndpoint(endpoint),
 		otlptracegrpc.WithInsecure(),
 	)
-	
+
 	traceExporter, err := otlptrace.New(ctx, client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create trace exporter: %w", err)
@@ -65,8 +64,8 @@ func newTracerProvider(exp sdktrace.SpanExporter, serviceName string) *sdktrace.
 
 	return sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exp,
-			sdktrace.WithBatchTimeout(1*time.Second), // Flush batches every 1 second
-			sdktrace.WithMaxExportBatchSize(512),     // Export up to 512 spans per batch
+			sdktrace.WithBatchTimeout(1*time.Second),
+			sdktrace.WithMaxExportBatchSize(512),
 		),
 		sdktrace.WithResource(r),
 	)

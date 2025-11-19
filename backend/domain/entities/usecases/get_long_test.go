@@ -4,13 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"lnk/domain/entities/usecases"
 	"lnk/extensions/gocqltesting"
 	"lnk/extensions/redis/mocks"
 	"lnk/gateways/gocql/repositories"
+
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 func Test_UseCase_GetLongURL(t *testing.T) {
@@ -43,7 +44,7 @@ func Test_UseCase_GetLongURL(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, shortCode)
 
-	longURL, err := useCase.GetLongURL(shortCode)
+	longURL, err := useCase.GetLongURL(ctx, shortCode)
 	require.NoError(t, err)
 	require.NotEmpty(t, longURL)
 	require.Equal(t, url, longURL)
@@ -52,6 +53,7 @@ func Test_UseCase_GetLongURL(t *testing.T) {
 func Test_UseCase_GetLongURL_NotFound(t *testing.T) {
 	t.Parallel()
 
+	ctx := context.Background()
 	session, err := gocqltesting.NewDB(t, t.Name())
 	require.NoError(t, err)
 
@@ -67,7 +69,7 @@ func Test_UseCase_GetLongURL_NotFound(t *testing.T) {
 	useCase := usecases.NewUseCase(params)
 
 	shortCode := "1234567890"
-	longURL, err := useCase.GetLongURL(shortCode)
+	longURL, err := useCase.GetLongURL(ctx, shortCode)
 	require.Error(t, err)
 	require.ErrorIs(t, err, usecases.ErrURLNotFound)
 	require.Empty(t, longURL)

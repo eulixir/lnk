@@ -1,6 +1,7 @@
 import { CheckCircle2, Copy } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useUrlShortener } from "@/providers/url-shortener-provider";
 import { Button } from "./ui/button";
 import {
   Dialog,
@@ -11,21 +12,9 @@ import {
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 
-interface UrlDialogProps {
-  shortUrl: string;
-  originalUrl: string;
-  open: boolean;
-  setUrl: (url: string) => void;
-  onOpenChange: (open: boolean) => void;
-}
-
-export function UrlDialog({
-  shortUrl,
-  originalUrl,
-  open,
-  setUrl,
-  onOpenChange,
-}: UrlDialogProps) {
+export function UrlDialog() {
+  const { shortUrl, originalUrl, dialogOpen, setDialogOpen, clearUrl } =
+    useUrlShortener();
   const [copied, setCopied] = useState(false);
   const frontEndUrl = process.env.NEXT_PUBLIC_FRONT_URL;
   const fullUrl = `${frontEndUrl}/${shortUrl}`;
@@ -42,8 +31,13 @@ export function UrlDialog({
     }
   };
 
+  const handleNewUrl = () => {
+    clearUrl();
+    setDialogOpen(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogContent className="sm:max-w-md bg-gray-800 border-0">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-[#30b6db]">
@@ -84,10 +78,7 @@ export function UrlDialog({
           </div>
 
           <Button
-            onClick={() => {
-              setUrl("");
-              onOpenChange(false);
-            }}
+            onClick={handleNewUrl}
             className="w-full bg-[#30b6db] hover:bg-[#30b6db]/90 text-white"
           >
             Shorten a new URL

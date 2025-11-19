@@ -19,8 +19,6 @@ export async function GET(
   try {
     const response = await getShortUrl(shortUrl);
 
-    console.log("response", response);
-
     if (response.status === 308) {
       const location = response.headers.get("Location");
       if (location) {

@@ -4,9 +4,10 @@ import (
 	"errors"
 	"net/http"
 
+	"lnk/domain/entities/usecases"
+
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-	"lnk/domain/entities/usecases"
 )
 
 type CreateURLRequest struct {
@@ -85,7 +86,7 @@ func (h *URLsHandler) CreateURL(c *gin.Context) {
 func (h *URLsHandler) GetURL(c *gin.Context) {
 	shortCode := c.Param("short_url")
 
-	longURL, err := h.useCase.GetLongURL(shortCode)
+	longURL, err := h.useCase.GetLongURL(c.Request.Context(), shortCode)
 	if err != nil {
 		if errors.Is(err, usecases.ErrURLNotFound) {
 			c.JSON(http.StatusNotFound, ErrorResponse{Error: err.Error()})
